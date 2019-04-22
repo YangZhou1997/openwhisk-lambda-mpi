@@ -25,7 +25,7 @@ ansible-playbook routemgmt.yml
 
 # set wsk
 wsk property set --apihost 172.17.0.1
-wsk property set --auth `cat /users/yangzhou/openwhisk/ansible/files/auth.whisk.system`
+wsk property set --auth `cat ~/openwhisk/ansible/files/auth.whisk.system`
 
 wsk sdk install bashauto
 source ./wsk_cli_bash_completion.sh
