@@ -1,0 +1,7 @@
+export TERM=screen-256color-bce
+export OPENWHISK_TMP_DIR=/users/yangzhou/openwhisk/ansible/tmp
+export PATH=/users/yangzhou/openwhisk/bin:$PATH
+
+alias wsk-local='WSK_CONFIG_FILE=~/.wskprops-local wsk -i'
+alias wsk="wsk -i"
+
