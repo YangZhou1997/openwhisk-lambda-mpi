@@ -86,3 +86,9 @@ intellij-run-config.groovy
 
 # VSCode
 .vscode/
+
+# ctags
+tags
+
+# python virtualenv
+virtualenv/
