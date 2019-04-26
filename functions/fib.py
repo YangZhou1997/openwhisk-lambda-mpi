@@ -1,4 +1,4 @@
-def main(args:
+def main(args):
     num = args.get("number", "30")
     return {"fibonacci": F(int(num))}
 def F(n):

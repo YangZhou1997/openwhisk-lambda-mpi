@@ -1,6 +1,6 @@
 # Dockerfile
-FROM ubuntu:16.04
-RUN apt-get update
-#RUN apt-get install python-pip
-#RUN pip install redis
-#RUN bash
+FROM openwhisk/python3action:latest
+
+RUN apk add --update py-pip
+RUN pip install redis
+RUN mkdir /addrMap
