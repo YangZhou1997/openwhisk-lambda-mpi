@@ -7,6 +7,8 @@ cd ..
 cd ansible
 
 sudo chown -R yangzhou:lambda-mpi-PG0 tmp/
+sudo chown -R yangzhou:lambda-mpi-PG0 ../bin/wsk
+
 
 ansible-playbook prereq.yml
 
