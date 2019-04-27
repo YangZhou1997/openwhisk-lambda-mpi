@@ -6,3 +6,4 @@ def main(args):
     res2 = r.get('foo')
     return {"result": str(res1) + " " + str(res2)}
 
+print(main(0))

@@ -1,2 +1,0 @@
-I am a genius;
-sending data from container to hostsending data from container to host
