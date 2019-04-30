@@ -8,10 +8,10 @@ NUM_THREAD = 18
 def dataGen(thread_id):
     mapper_range = ts.NUM_MAPPER // NUM_THREAD
     for i in range(thread_id * mapper_range, thread_id * mapper_range + mapper_range):
-        filename = "/users/yangzhou/openwhisk/addrMap/teradata/__random_bytes_" + str(ts.LEN_BYTES) + "_" + str(i) + ".dat"
+        bytesbuf = b''
+        filename = "/users/yangzhou/openwhisk/addrMap/teradata/src_data/__random_bytes_" + str(ts.LEN_BYTES) + "_" + str(i) + ".dat"
         f = open(filename, 'wb')
-        for j in range(CHUNCK_SIZE_PER_MAPPER):
-            f.write(ts.getRandomBytes(ts.LEN_BYTES))
+        f.write(ts.getRandomBytes(ts.LEN_BYTES * CHUNCK_SIZE_PER_MAPPER))
         f.close()
 
 if __name__ == "__main__":

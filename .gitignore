@@ -92,3 +92,8 @@ tags
 
 # python virtualenv
 virtualenv/
+
+*.dat
+
+teragen
+*ipaddr
