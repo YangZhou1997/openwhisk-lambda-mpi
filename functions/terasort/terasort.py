@@ -96,10 +96,10 @@ REDUCER_TYPE = 1
 
 # after all mappers' computation ends, reducers begin to work
 def main(args):
-    # mapper_or_reducer = int(args.get("type"))
-    # work_id = int(args.get("id"))
-    mapper_or_reducer = int(args[0])
-    work_id = int(args[1])
+    mapper_or_reducer = int(args.get("type"))
+    work_id = int(args.get("id"))
+    # mapper_or_reducer = int(args[0])
+    # work_id = int(args[1])
 
     if mapper_or_reducer == MAPPER_TYPE:
         time1 = time.time()
@@ -145,6 +145,7 @@ def main(args):
         total_size = 0
         for bytesarray in reducer_keys:
             f_ephe.write(struct.pack(">I", total_size))
+            print(len(struct.pack(">I", total_size)))
             total_size += len(bytesarray)
         for bytesarray in reducer_keys:
             f_ephe.write(bytesarray)
@@ -167,8 +168,9 @@ def main(args):
         for i in range(0, MAPPER_NUM):
             f_ephe = open("/addrMap/teradata/ephe_data/__random_bytes_32M_" + str(i) + ".dat", 'rb')
             f_ephe.seek(work_id * 4, 0)
-            offset = struct.unpack("<I", f_ephe.read(4))[0]
-            offset_next = struct.unpack("<I", f_ephe.read(4))[0]
+            offset = struct.unpack(">I", f_ephe.read(4))[0]
+            offset_next = struct.unpack(">I", f_ephe.read(4))[0]
+
             f_ephe.seek(REDUCER_NUM * 4 + offset, 0)
             key_array_size = offset_next - offset
             key_array += f_ephe.read(key_array_size)
@@ -184,7 +186,7 @@ def main(args):
 
         time3 = time.time()
         # write results into dst data
-        f_dst = open("/addrMap/teradata/dst_data/__random_bytes_32M_" + str(i) + ".dat", 'wb')
+        f_dst = open("/addrMap/teradata/dst_data/__random_bytes_32M_" + str(work_id) + ".dat", 'wb')
         for key in sort_keys:
             f_dst.write(key)
         f_dst.close()
@@ -196,5 +198,5 @@ def main(args):
     else:
         return {"res": "error"}
 
-if __name__ == "__main__":
-    print(main((sys.argv[1], sys.argv[2])))
+# if __name__ == "__main__":
+    # print(main((sys.argv[1], sys.argv[2])))
