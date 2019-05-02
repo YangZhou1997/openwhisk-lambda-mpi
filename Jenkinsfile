@@ -24,7 +24,7 @@ timeout(time: 12, unit: 'HOURS') {
 
     node("openwhisk") {
         def hostName = sh(returnStdout: true, script: 'hostname').trim()
-        def domainName = hostName+".apache.org"
+        def domainName = hostName
         def home = sh(returnStdout: true, script: 'echo $HOME').trim()
         def jobName = sh(returnStdout: true, script: 'echo $JOB_NAME').trim()
         def jobSpace = "${home}/jenkins-slave/workspace/${jobName}"
