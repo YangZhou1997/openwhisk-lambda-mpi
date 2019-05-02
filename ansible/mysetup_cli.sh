@@ -1,9 +1,10 @@
 #!/bin/bash
 
-cd /users/yangzhou/incubator-openwhisk-cli
+cd ~/incubator-openwhisk-cli
 ./gradlew releaseBinaries -Pnativebuild
-cd /users/yangzhou/openwhisk/ansible
-ansible-playbook -i environments/jenkins edge.yml -e mode=clean
-ansible-playbook -i environments/jenkins edge.yml -e cli_installation_mode=local -e openwhisk_cli_home=/users/yangzhou/incubator-openwhisk-cli
+cd ~/openwhisk/ansible
 
-cp /users/yangzhou/incubator-openwhisk-cli/build/wsk /users/yangzhou/openwhisk/bin/
+ansible-playbook -i environments/jenkins edge.yml -e mode=clean
+ansible-playbook -i environments/jenkins edge.yml -e cli_installation_mode=local -e openwhisk_cli_home=~/incubator-openwhisk-cli
+
+cp ~/incubator-openwhisk-cli/build/wsk ~/openwhisk/bin/

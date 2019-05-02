@@ -1,130 +1,104 @@
-<!--
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
--->
+# OpenWhisk with Messaging enhanced
 
-# OpenWhisk
-
-[![Build Status](https://travis-ci.org/apache/incubator-openwhisk.svg?branch=master)](https://travis-ci.org/apache/incubator-openwhisk)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Join Slack](https://img.shields.io/badge/join-slack-9B69A0.svg)](http://slack.openwhisk.org/)
-[![codecov](https://codecov.io/gh/apache/incubator-openwhisk/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-openwhisk)
-[![Twitter](https://img.shields.io/twitter/follow/openwhisk.svg?style=social&logo=twitter)](https://twitter.com/intent/follow?screen_name=openwhisk)
-
-OpenWhisk is a cloud-first distributed event-based programming service. It provides a programming model to upload event handlers to a cloud service, and register the handlers to respond to various events. Learn more at [http://openwhisk.incubator.apache.org](http://openwhisk.incubator.apache.org).
-
-
-* [Quick Start](#quick-start) (Docker-Compose)
-* [Native development](#native-development) (Mac and Ubuntu)
-* [Kubernetes](#kubernetes-setup)
-* [Vagrant](#vagrant-setup)
-* [Learn concepts and commands](#learn-concepts-and-commands)
-* [Issues](#issues)
-* [Slack](#slack)
-
-### Quick Start
-The easiest way to start using OpenWhisk is to get Docker installed on Mac, Windows or Linux. The [Docker website](https://docs.docker.com/install/) has detailed instructions on getting the tools installed. This does not give you a production deployment but gives you enough of the pieces to start writing functions and seeing them run.
-
+### Clone rep:
+Under `~/` directory: 
 ```
-git clone https://github.com/apache/incubator-openwhisk-devtools.git
-cd incubator-openwhisk-devtools/docker-compose
-make quick-start
+git clone git@github.com:YangZhou1997/openwhisk-lambda-mpi.git openwhisk
+git clone git@github.com:apache/incubator-openwhisk-cli.git
 ```
 
-For more detailed instructions or if you encounter problems see the [OpenWhisk-dev tools](https://github.com/apache/incubator-openwhisk-devtools/blob/master/docker-compose/README.md) project.
-
-### Kubernetes Setup
-
-Another path to quickly starting to use OpenWhisk is to install it on a Kubernetes cluster.  On a Mac, you can use the Kubernetes support built into Docker 18.06 (or higher). You can also deploy OpenWhisk on Minikube, on a managed Kubernetes cluster provisioned from a public cloud provider, or on a Kubernetes cluster you manage yourself. To get started,
-
+### Machine environment setup: 
 ```
-git clone https://github.com/apache/incubator-openwhisk-deploy-kube.git
+cd openwhisk
+./presetup.sh
 ```
 
-Then follow the instructions in the [OpenWhisk on Kubernetes README.md](https://github.com/apache/incubator-openwhisk-deploy-kube/blob/master/README.md).
-
-### Vagrant Setup
-A [Vagrant](http://vagrantup.com) machine is also available to run OpenWhisk on Mac, Windows PC or GNU/Linux but isn't used by as much of the dev team so sometimes lags behind.
-Download and install [VirtualBox](https://www.virtualbox.org/wiki/Downloads) and [Vagrant](https://www.vagrantup.com/downloads.html) for your operating system and architecture.
-
-**Note:** For Windows, you may need to install an ssh client in order to use the command `vagrant ssh`. Cygwin works well for this, and Git Bash comes with an ssh client you can point to. If you run the command and no ssh is installed, Vagrant will give you some options to try.
-
-Follow these step to run your first OpenWhisk Action:
+### WSK CLI setup 
 ```
-# Clone openwhisk
-git clone --depth=1 https://github.com/apache/incubator-openwhisk.git openwhisk
-
-# Change directory to tools/vagrant
-cd openwhisk/tools/vagrant
-
-# Run script to create vm and run hello action
-./hello
+cd openwhisk/ansible
+./mysetup_cli.sh
 ```
 
-Wait for hello action output:
+Then you can choose local setup or distributed setup:  
+### Local setup 
+``` 
+cd openwhisk/ansible
+./mysetup_local.sh
 ```
-wsk action invoke /whisk.system/utils/echo -p message hello --result
-{
-    "message": "hello"
-}
+
+**Note:** mysetup\_local.sh has only been tested in a bare-metal Ubuntu 16.04.1 LTS (GNU/Linux 4.4.0-142-generic x86\_64)
+
+### Distributed setup
+I rent five bare-metal servers from [CloudLab](https://www.cloudlab.us/) each with Ubuntu 16.04.6 LTS (GNU/Linux 4.4.0-145-generic x86_64). 
+These five servers are connected with each other using 10GB NIC (Dual-port Intel X520). The hardware details are [here](http://docs.cloudlab.us/hardware.html#%28part._cloudlab-wisconsin%29). 
+The five-server cluster is configured using [profile.xml](profile.xml)
+
+Here I want to host controller, crouchDB, redis, zookeeper, nginx, and kafka on node-0, and host one invoker on each of the other nodes (ie, node-1~4).
+The basic setup processure follows [Jenkins Pipeline](https://cwiki.apache.org/confluence/display/OPENWHISK/How+to+maintain+the+Jenkins+pipeline+for+OpenWhisk) and the [OpenWhisk Jenkinsfile](https://github.com/apache/incubator-openwhisk/blob/master/Jenkinsfile). 
+
+Machine details: 
+| label | host name | domain name | (inner) ip address |
+| --- | --- | --- | --- |
+| node-0 | node-0.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-0.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.2 |
+| node-1 | node-1.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-1.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.5 |
+| node-2 | node-2.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-2.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.3 |
+| node-3 | node-3.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-3.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.1 |
+| node-4 | node-4.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-4.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.4 |
+
+##### Setup SSH for ansible
+Make sure that each server can ssh to the other four servers vai ssh without password. 
+
+##### Setup private docker registry
+From [Jenkins Pipeline](https://cwiki.apache.org/confluence/display/OPENWHISK/How+to+maintain+the+Jenkins+pipeline+for+OpenWhisk): 
+> Since we only need to download and build the source code of OpenWhisk on one VM, we need to set up a private docker registry service, so that the docker images we build can be access by other two VMs
+
+---
+
+On node-0: generating certificate
+```
+cp -r openwhisk/certs ./
+cd certs
+./key_gen.sh
+```
+Fill `node-0.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us` when requiring the domain id
+
+---
+
+On node-0: setup `/etc/docker/certs.d/`
+```
+cd certs
+./set_certs.sh
 ```
 
-These steps were tested on Mac OS X El Capitan, Ubuntu 14.04.3 LTS and Windows using Vagrant.
-For more information about using OpenWhisk on Vagrant see the [tools/vagrant/README.md](tools/vagrant/README.md)
+---
 
-During the Vagrant setup, the Oracle JDK 8 is used as the default Java environment. If you would like to use OpenJDK 8, please change the line "su vagrant -c 'source all.sh oracle'" into "su vagrant -c 'source all.sh'" in tools/vagrant/Vagrantfile.
+On node-0: setup docker registry
+```
+cd certs
+./run_registry.sh
+```
 
-### Native development
+---
 
-Docker must be natively installed in order to build and deploy OpenWhisk.
-If you plan to make contributions to OpenWhisk, we recommend either a Mac or Ubuntu environment.
+On node-0: distributing certificate to other nodes: 
+```
+cd certs
+./cert_dist.sh
+```
 
-* [Setup Mac for OpenWhisk](tools/macos/README.md)
-* [Setup Ubuntu for OpenWhisk](tools/ubuntu-setup/README.md)
+---
 
-### Learn concepts and commands
+On each of the other nodes, run: 
+```
+cd certs
+./set_certs.sh
+```
+---
 
-Browse the [documentation](docs/) to learn more. Here are some topics you may be
-interested in:
+##### Build and deploy openwhisk
+```
+cd openwhisk/ansible
+./mysetup_dist.sh
+```
 
-- [System overview](docs/about.md)
-- [Getting Started](docs/README.md)
-- [Create and invoke actions](docs/actions.md)
-- [Create triggers and rules](docs/triggers_rules.md)
-- [Use and create packages](docs/packages.md)
-- [Browse and use the catalog](docs/catalog.md)
-- [Using the OpenWhisk mobile SDK](docs/mobile_sdk.md)
-- [OpenWhisk system details](docs/reference.md)
-- [Implementing feeds](docs/feeds.md)
 
-### Repository Structure
-
-The OpenWhisk system is built from a [number of components](docs/dev/modules.md).  The picture below groups the components by their GitHub repos. Please open issues for a component against the appropriate repo (if in doubt just open against the main openwhisk repo).
-
-![component/repo mapping](docs/images/components_to_repos.png)
-
-### Issues
-
-Report bugs, ask questions and request features [here on GitHub](../../issues).
-
-### Slack
-
-You can also join the OpenWhisk Team on Slack [https://openwhisk-team.slack.com](https://openwhisk-team.slack.com) and chat with developers. To get access to our public slack team, request an invite [https://openwhisk.incubator.apache.org/slack.html](https://openwhisk.incubator.apache.org/slack.html).
-
-# Disclaimer
-
-Apache OpenWhisk is an effort undergoing incubation at The Apache Software Foundation (ASF), sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.

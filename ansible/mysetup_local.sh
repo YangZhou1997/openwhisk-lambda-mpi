@@ -1,5 +1,8 @@
+#!/bin/bash
+
 # Select a data store
 ansible-playbook setup.yml
+ansible-playbook prereq.yml
 
 # Building
 cd ..
@@ -10,26 +13,16 @@ sudo chown -R yangzhou:lambda-mpi-PG0 tmp/
 sudo chown -R yangzhou:lambda-mpi-PG0 ../bin/wsk
 
 
-echo "prereq.yml"
-ansible-playbook prereq.yml
-
-echo "couchdb.yml"
 ansible-playbook couchdb.yml
-echo "initdb.yml"
 ansible-playbook initdb.yml
-echo "wipe.yml"
 ansible-playbook wipe.yml
-echo "openwhisk.yml"
 ansible-playbook openwhisk.yml
 
 # installs a catalog of public packages and actions
-echo "postdeploy.yml"
 ansible-playbook postdeploy.yml
 
 # to use the API gateway
-echo "apigateway.yml"
 ansible-playbook apigateway.yml
-echo "routemgmt.yml"
 ansible-playbook routemgmt.yml
 
 
