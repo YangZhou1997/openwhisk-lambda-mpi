@@ -51,8 +51,8 @@ def server_listen_on(hostip):
 
 MAPPER_NUM = 1800
 REDUCER_NUM = 1800
-STR_NUM_PER_MAPPER = 1024 * 1024
 
+STR_NUM_PER_MAPPER = 1024 * 1024
 LEN_BYTES = 32
 
 def getPrefixVal(key):
@@ -96,6 +96,8 @@ REDUCER_TYPE = 1
 
 # after all mappers' computation ends, reducers begin to work
 def main(args):
+    global MAPPER_NUM
+    global REDUCER_NUM
     mapper_or_reducer = int(args.get("type"))
     work_id = int(args.get("id"))
     # mapper_or_reducer = int(args[0])
