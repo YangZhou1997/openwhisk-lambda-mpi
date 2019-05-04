@@ -31,7 +31,8 @@ cd openwhisk/ansible
 
 # Distributed setup
 I rent five bare-metal servers from [CloudLab](https://www.cloudlab.us/) each with Ubuntu 16.04.6 LTS (GNU/Linux 4.4.0-145-generic x86_64). 
-These five servers are connected with each other using 10GB NIC (Dual-port Intel X520). The hardware details are [here](http://docs.cloudlab.us/hardware.html#%28part._cloudlab-wisconsin%29). 
+These five servers are connected with each other using 10GB NIC (Dual-port Intel X520). 
+The specific hardware type is [c220g2](http://docs.cloudlab.us/hardware.html#%28part._cloudlab-wisconsin%29). 
 The five-server cluster is configured using [profile.xml](profile.xml)
 
 Here I want to host controller, crouchDB, redis, zookeeper, nginx, and kafka on node-0, and host one invoker on each of the other nodes (ie, node-1~4).
@@ -59,16 +60,16 @@ On node-0:
 cp -r openwhisk/certs ./
 cd certs
 
-\# generating certificate: fill `node-0.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us` when requiring the domain id
+# generating certificate: fill `node-0.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us` when requiring the domain id
 ./key_gen.sh
 
-\# setup /etc/docker/certs.d/
+# setup /etc/docker/certs.d/
 ./set_certs.sh
 
-\# setup docker registry
+# setup docker registry
 ./run_registry.sh
 
-\# distributing certificate to other nodes:
+# distributing certificate to other nodes:
 ./cert_dist.sh
 ```
 
