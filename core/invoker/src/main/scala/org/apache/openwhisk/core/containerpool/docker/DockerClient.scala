@@ -132,7 +132,7 @@ class DockerClient(dockerHost: Option[String] = None,
       }
     }.flatMap { _ =>
       // Iff the semaphore was acquired successfully
-      runCmd(Seq("run", "-d", "-v", "/users/yangzhou/openwhisk/addrMap:/addrMap", "--network", "openwhisk-overlay") ++ args ++ Seq(image), config.timeouts.run)
+      runCmd(Seq("run", "-d", "-v", "/users/yangzhou/openwhisk/addrMap:/addrMap") ++ args ++ Seq(image), config.timeouts.run)
         .andThen {
           // Release the semaphore as quick as possible regardless of the runCmd() result
           case _ => runSemaphore.release()
@@ -157,7 +157,7 @@ class DockerClient(dockerHost: Option[String] = None,
   def inspectIPAddress(id: ContainerId, network: String)(implicit transid: TransactionId): Future[ContainerAddress] =
     runCmd(
       Seq("inspect", "--format", s"{{.NetworkSettings.Networks.${network}.IPAddress}}", id.asString),
-      config.timeouts.inspect).flatMap {
+      config.timeouts.inspect).flatMap 
       case "<no value>" => Future.failed(new NoSuchElementException)
       case stdout       => Future.successful(ContainerAddress(stdout))
     }

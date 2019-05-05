@@ -25,5 +25,5 @@ ssh yangzhou@$node4 docker swarm leave
 ssh yangzhou@$node4 docker swarm join --token $TOKEN --advertise-addr $node4 $node1:2377
 
 echo "node1 create attachable overlay network"
-ssh yangzhou@$node1 docker network create --driver=overlay --attachable openwhisk-overlay
+ssh yangzhou@$node1 docker network create --driver=overlay --attachable openwhiskOverlay
 
