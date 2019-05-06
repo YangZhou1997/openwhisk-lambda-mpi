@@ -141,6 +141,7 @@ object DockerContainer {
             Future.failed(BlackboxStartupError(Messages.imagePullError(imageToUse)))
           }
       }
+      _ <- docker.connectBridge(id)
       ip <- docker.inspectIPAddress(id, network).recoverWith {
         // remove the container immediately if inspect failed as
         // we cannot recover that case automatically

@@ -130,9 +130,10 @@ class DockerClientWithFileAccess(dockerHost: Option[String] = None,
   // See extended trait for description
   override def inspectIPAddress(id: ContainerId, network: String)(
     implicit transid: TransactionId): Future[ContainerAddress] = {
-    ipAddressFromFile(id, network).recoverWith {
-      case _ => super.inspectIPAddress(id, network)
-    }
+    super.inspectIPAddress(id, network)
+//    ipAddressFromFile(id, network).recoverWith {
+//      case _ => super.inspectIPAddress(id, network)
+//    }
   }
 
   override def isOomKilled(id: ContainerId)(implicit transid: TransactionId): Future[Boolean] =
