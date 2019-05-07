@@ -17,6 +17,8 @@
 
 package org.apache.openwhisk.core.mesos
 
+import java.nio.file.{Files, Paths}
+
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.pattern.ask
@@ -187,6 +189,23 @@ class MesosContainerFactory(config: WhiskConfig,
         case t: Throwable =>
           logging.error(this, s"Mesos framework teardown failed : $t}")
       }
+  }
+
+  // temporary solution for DockerContainerFactor compiling: need to go deeper into MesosTask
+  private var activeIPset = Set[String]()
+  override def addIP(ip: String): Unit = {
+    activeIPset += ip
+    Future.successful(())
+  }
+  override def rmIP(ip: String): Unit = {
+    activeIPset -= ip
+    Future.successful(())
+  }
+
+  override def writeAddrMap(): Unit = {
+    val path = Paths.get("/addrMap/test.txt")
+    Files.write(path, activeIPset.mkString("|").getBytes())
+    Future.successful(())
   }
 }
 object MesosContainerFactory {

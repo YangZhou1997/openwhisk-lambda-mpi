@@ -129,7 +129,7 @@ class DockerClientWithFileAccess(dockerHost: Option[String] = None,
 
   // See extended trait for description
   override def inspectIPAddress(id: ContainerId, network: String)(
-    implicit transid: TransactionId): Future[ContainerAddress] = {
+    implicit transid: TransactionId): Future[Array[ContainerAddress]] = {
     super.inspectIPAddress(id, network)
 //    ipAddressFromFile(id, network).recoverWith {
 //      case _ => super.inspectIPAddress(id, network)

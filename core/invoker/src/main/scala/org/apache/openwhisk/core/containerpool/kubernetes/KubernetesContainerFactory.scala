@@ -17,6 +17,8 @@
 
 package org.apache.openwhisk.core.containerpool.kubernetes
 
+import java.nio.file.{Files, Paths}
+
 import akka.actor.ActorSystem
 import pureconfig.loadConfigOrThrow
 
@@ -26,12 +28,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import org.apache.openwhisk.common.Logging
 import org.apache.openwhisk.common.TransactionId
-import org.apache.openwhisk.core.containerpool.{
-  Container,
-  ContainerFactory,
-  ContainerFactoryProvider,
-  RuntimesRegistryConfig
-}
+import org.apache.openwhisk.core.containerpool.{Container, ContainerFactory, ContainerFactoryProvider, RuntimesRegistryConfig}
 import org.apache.openwhisk.core.entity.ByteSize
 import org.apache.openwhisk.core.entity.ExecManifest.ImageName
 import org.apache.openwhisk.core.entity.InvokerInstanceId
@@ -84,6 +81,24 @@ class KubernetesContainerFactory(
       memory,
       environment = Map("__OW_API_HOST" -> config.wskApiHost),
       labels = Map("invoker" -> label))
+  }
+
+
+  // temporary solution for DockerContainerFactor compiling: need to go into KubernetesContainer
+  private var activeIPset = Set[String]()
+  override def addIP(ip: String): Unit = {
+    activeIPset += ip
+    Future.successful(())
+  }
+  override def rmIP(ip: String): Unit = {
+    activeIPset -= ip
+    Future.successful(())
+  }
+
+  override def writeAddrMap(): Unit = {
+    val path = Paths.get("/addrMap/test.txt")
+    Files.write(path, activeIPset.mkString("|").getBytes())
+    Future.successful(())
   }
 }
 

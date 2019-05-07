@@ -222,6 +222,9 @@ class InvokerReactive(
           // if the doc revision is missing, then bypass cache
           if (actionid.rev == DocRevision.empty) logging.warn(this, s"revision was not provided for ${actionid.id}")
 
+          containerFactory.addIP("test ip from controller") // needs to be replaced by the IP contained in controller messages.
+          containerFactory.writeAddrMap()
+
           WhiskAction
             .get(entityStore, actionid.id, actionid.rev, fromCache = actionid.rev != DocRevision.empty)
             .flatMap { action =>

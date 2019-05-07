@@ -17,13 +17,16 @@
 
 package org.apache.openwhisk.core.containerpool.docker
 
+import java.nio.file.{Files, Paths}
 import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
+
 import akka.actor.ActorSystem
 import akka.stream._
 import akka.stream.scaladsl.Framing.FramingException
 import spray.json._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import org.apache.openwhisk.common.Logging
@@ -43,6 +46,22 @@ import org.apache.openwhisk.http.Messages
 object DockerContainer {
 
   private val byteStringSentinel = ByteString(Container.ACTIVATION_LOG_SENTINEL)
+
+  private var activeIPset = Set[String]()
+  def addIP(ip: String): Future[Unit] = {
+    activeIPset += ip
+    Future.successful(())
+  }
+  def rmIP(ip: String): Future[Unit] = {
+    activeIPset -= ip
+    Future.successful(())
+  }
+
+  def writeAddrMap(): Future[Unit] = {
+    val path = Paths.get("/addrMap/test.txt")
+    Files.write(path, activeIPset.mkString("|").getBytes())
+    Future.successful(())
+  }
 
   /**
    * Creates a container running on a docker daemon.
@@ -149,7 +168,11 @@ object DockerContainer {
           docker.rm(id)
           Future.failed(WhiskContainerStartupError(Messages.resourceProvisionError))
       }
-    } yield new DockerContainer(id, ip, useRunc)
+//      ip(0): bridge ip, used for invoker talking to functions
+//      ip(1): overlay ip, used for functions talking with each other.
+      _ <- addIP(ip(1).host)
+      _ <- writeAddrMap()
+    } yield new DockerContainer(id, ip(0), ip(1), useRunc)
   }
 }
 
@@ -161,10 +184,12 @@ object DockerContainer {
  *
  * @constructor
  * @param id the id of the container
- * @param addr the ip of the container
- */
+ * @param addr the bridge network ip of the container
+ * @param addrOverlay the overlay network ip of the container
+*/
 class DockerContainer(protected val id: ContainerId,
                       protected val addr: ContainerAddress,
+                      protected val addrOverlay: ContainerAddress, // just for making testing code happy
                       protected val useRunc: Boolean)(implicit docker: DockerApiWithFileAccess,
                                                       runc: RuncApi,
                                                       override protected val as: ActorSystem,

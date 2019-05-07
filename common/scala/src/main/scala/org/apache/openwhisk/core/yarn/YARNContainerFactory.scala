@@ -17,6 +17,8 @@
 
 package org.apache.openwhisk.core.yarn
 
+import java.nio.file.{Files, Paths}
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.model.{HttpMethods, StatusCodes}
 import akka.pattern.ask
@@ -31,7 +33,7 @@ import pureconfig.loadConfigOrThrow
 import spray.json._
 
 import scala.collection.immutable.HashMap
-import scala.concurrent.{blocking, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.concurrent.duration._
 import YARNJsonProtocol._
 import akka.stream.ActorMaterializer
@@ -136,6 +138,24 @@ class YARNContainerFactory(actorSystem: ActorSystem,
     yarnComponentActors foreach { case (k, v)     => actorSystem.stop(v) }
     YARNContainerInfoActors foreach { case (k, v) => actorSystem.stop(v) }
   }
+
+  // temporary solution for DockerContainerFactor compiling
+  private var activeIPset = Set[String]()
+  override def addIP(ip: String): Unit = {
+    activeIPset += ip
+    Future.successful(())
+  }
+  override def rmIP(ip: String): Unit = {
+    activeIPset -= ip
+    Future.successful(())
+  }
+
+  override def writeAddrMap(): Unit = {
+    val path = Paths.get("/addrMap/test.txt")
+    Files.write(path, activeIPset.mkString("|").getBytes())
+    Future.successful(())
+  }
+
   def createService(): Unit = {
     logging.info(this, "Creating Service with images: " + images.map(i => i.publicImageName).mkString(", "))
 

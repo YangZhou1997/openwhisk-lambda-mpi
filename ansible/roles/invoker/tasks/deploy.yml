@@ -286,7 +286,8 @@
       {{ whisk_logs_dir }}/{{ invoker_name }}:/logs,\
       {{ invoker.confdir }}/{{ invoker_name }}:/conf,\
       {{ dockerInfo['DockerRootDir'] }}/containers/:/containers,\
-      {{ docker_sock | default('/var/run/docker.sock') }}:/var/run/docker.sock"
+      {{ docker_sock | default('/var/run/docker.sock') }}:/var/run/docker.sock,\
+      /users/yangzhou/openwhisk/addrMap:/addrMap"
 
 - name: set invoker runc volume
   set_fact:

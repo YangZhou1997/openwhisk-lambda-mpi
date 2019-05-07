@@ -88,6 +88,15 @@ trait ContainerFactory {
 
   /** cleanup any remaining Containers; should block until complete; should ONLY be run at startup/shutdown */
   def cleanup(): Unit
+
+  /** add an IP address to activeIPset **/
+  def addIP(ip: String): Unit
+
+  /** rm an IP address to activeIPset **/
+  def rmIP(ip: String): Unit
+
+  /** write activeIPset into /addrMap **/
+  def writeAddrMap(): Unit
 }
 
 object ContainerFactory {
