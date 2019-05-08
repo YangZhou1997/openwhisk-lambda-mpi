@@ -100,6 +100,9 @@ class KubernetesContainerFactory(
     Files.write(path, activeIPset.mkString("|").getBytes())
     Future.successful(())
   }
+  override def getAddrMap(): Set[String] = {
+    activeIPset
+  }
 }
 
 object KubernetesContainerFactoryProvider extends ContainerFactoryProvider {

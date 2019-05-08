@@ -207,6 +207,10 @@ class MesosContainerFactory(config: WhiskConfig,
     Files.write(path, activeIPset.mkString("|").getBytes())
     Future.successful(())
   }
+
+  override def getAddrMap(): Set[String] = {
+    activeIPset
+  }
 }
 object MesosContainerFactory {
   private def createClient(actorSystem: ActorSystem, mesosConfig: MesosConfig): ActorRef =

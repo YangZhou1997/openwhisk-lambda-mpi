@@ -97,6 +97,9 @@ trait ContainerFactory {
 
   /** write activeIPset into /addrMap **/
   def writeAddrMap(): Unit
+
+  /** return addrMap set **/
+  def getAddrMap(): Set[String]
 }
 
 object ContainerFactory {

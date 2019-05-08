@@ -156,6 +156,10 @@ class YARNContainerFactory(actorSystem: ActorSystem,
     Future.successful(())
   }
 
+  override def getAddrMap(): Set[String] = {
+    activeIPset
+  }
+
   def createService(): Unit = {
     logging.info(this, "Creating Service with images: " + images.map(i => i.publicImageName).mkString(", "))
 

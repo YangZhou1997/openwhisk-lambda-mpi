@@ -94,6 +94,7 @@ class DockerContainerFactory(instance: InvokerInstanceId,
 
   override def writeAddrMap(): Unit = {DockerContainer.writeAddrMap()}
 
+  override def getAddrMap(): Set[String] = {DockerContainer.getAddrMap()}
   /**
    * Removes all wsk_ containers - regardless of their state
    *

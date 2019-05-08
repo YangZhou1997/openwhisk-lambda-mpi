@@ -18,6 +18,8 @@
 package org.apache.openwhisk.core.loadBalancer
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import java.util.Calendar
 
 import scala.collection.immutable
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -172,12 +174,20 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
       logHandoff = false)
   })
 
+  def dumpPingMsg(p: PingMessage): Future[Unit] = {
+    val path = Paths.get("/addrMap/pingmsg.txt")
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes())
+//    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.APPEND)
+    Future.successful(())
+  }
+
   def processInvokerPing(bytes: Array[Byte]): Future[Unit] = Future {
     val raw = new String(bytes, StandardCharsets.UTF_8)
     PingMessage.parse(raw) match {
       case Success(p: PingMessage) =>
         self ! p
         invokerPingFeed ! MessageFeed.Processed
+        dumpPingMsg(p)
 
       case Failure(t) =>
         invokerPingFeed ! MessageFeed.Processed

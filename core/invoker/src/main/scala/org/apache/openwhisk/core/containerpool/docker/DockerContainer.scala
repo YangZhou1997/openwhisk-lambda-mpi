@@ -63,6 +63,10 @@ object DockerContainer {
     Future.successful(())
   }
 
+  def getAddrMap(): Set[String] = {
+    activeIPset
+  }
+
   /**
    * Creates a container running on a docker daemon.
    *
