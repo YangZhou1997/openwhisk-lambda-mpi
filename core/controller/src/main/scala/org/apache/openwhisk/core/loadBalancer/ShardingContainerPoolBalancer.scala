@@ -338,11 +338,20 @@ object ShardingContainerPoolBalancer extends LoadBalancerProvider {
 
         InvokerPool.prepare(instance, WhiskEntityStore.datastore())
 
+        val msgProvider = SpiLoader.get[MessagingProvider]
+        if (msgProvider
+          .ensureTopic(whiskConfig, topic = "addrMap", topicConfig = "health")
+          .isFailure) {
+          logging.warn(this, "failure during msgProvider.ensureTopic for topic addrMap")
+        }
+
         actorRefFactory.actorOf(
           InvokerPool.props(
             (f, i) => f.actorOf(InvokerActor.props(i, instance)),
             (m, i) => sendActivationToInvoker(messagingProducer, m, i),
             messagingProvider.getConsumer(whiskConfig, s"health${instance.asString}", "health", maxPeek = 128),
+            messagingProvider.getProducer(whiskConfig, Some(ActivationEntityLimit.MAX_ACTIVATION_LIMIT)),
+            actorSystem,
             monitor))
       }
 

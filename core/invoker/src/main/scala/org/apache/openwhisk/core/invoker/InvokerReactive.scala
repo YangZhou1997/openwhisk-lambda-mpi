@@ -18,7 +18,9 @@
 package org.apache.openwhisk.core.invoker
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 import java.time.Instant
+import java.util.Calendar
 
 import akka.actor.{ActorRefFactory, ActorSystem, Props}
 import akka.event.Logging.InfoLevel
@@ -131,6 +133,16 @@ class InvokerReactive(
     new MessageFeed("activation", logging, consumer, maxPeek, 1.second, processActivationMessage)
   })
 
+
+  private val addrMapTopic = "addrMap"
+  private val addrMapConsumer =
+    msgProvider.getConsumer(config, addrMapTopic, addrMapTopic, maxPeek, maxPollInterval = TimeLimit.MAX_DURATION + 1.minute)
+
+  private val addrMapActivationFeed = actorSystem.actorOf(Props {
+    new MessageFeed("pullAddrMap", logging, addrMapConsumer, maxPeek, 1.second, processAddrMapMessage)
+  })
+
+
   /** Sends an active-ack. */
   private val ack: InvokerReactive.ActiveAck = (tid: TransactionId,
                                                 activationResult: WhiskActivation,
@@ -199,6 +211,22 @@ class InvokerReactive(
     containerFactory.getAddrMap()
   }
 
+  def dumpPingMsg(p: PingMessage): Future[Unit] = {
+    val path = Paths.get("/addrMap/pingmsg.txt")
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes())
+    //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.APPEND)
+    Future.successful(())
+  }
+
+  /** Is called when an addrMapMessage is read from Kafka */
+  def processAddrMapMessage(bytes: Array[Byte]): Future[Unit] = {
+    Future(PingMessage.parse(new String(bytes, StandardCharsets.UTF_8)))
+      .flatMap(Future.fromTry)
+      .flatMap { msg =>
+        addrMapActivationFeed ! MessageFeed.Processed
+        dumpPingMsg(msg)
+      }
+  }
 
   /** Is called when an ActivationMessage is read from Kafka */
   def processActivationMessage(bytes: Array[Byte]): Future[Unit] = {

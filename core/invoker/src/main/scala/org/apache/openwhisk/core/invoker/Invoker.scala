@@ -17,7 +17,6 @@
 
 package org.apache.openwhisk.core.invoker
 
-import java.nio.file.{Files, Paths}
 
 import akka.Done
 import akka.actor.{ActorSystem, CoordinatedShutdown}
@@ -31,7 +30,7 @@ import org.apache.openwhisk.core.{ConfigKeys, WhiskConfig}
 import org.apache.openwhisk.core.WhiskConfig._
 import org.apache.openwhisk.core.connector.{MessagingProvider, PingMessage}
 import org.apache.openwhisk.core.containerpool.ContainerPoolConfig
-import org.apache.openwhisk.core.entity.{ActivationEntityLimit, ExecManifest, InvokerInstanceId, TimeLimit}
+import org.apache.openwhisk.core.entity.{ActivationEntityLimit, ExecManifest, InvokerInstanceId}
 import org.apache.openwhisk.core.entity.size._
 import org.apache.openwhisk.http.{BasicHttpService, BasicRasService}
 import org.apache.openwhisk.spi.SpiLoader
@@ -158,8 +157,6 @@ object Invoker {
       abort(s"failure during msgProvider.ensureTopic for topic $topicName")
     }
     val producer = msgProvider.getProducer(config, Some(ActivationEntityLimit.MAX_ACTIVATION_LIMIT))
-    val consumer = msgProvider.getConsumer(config, "addrMap", "addrMap", 1, maxPollInterval = TimeLimit.MAX_DURATION + 1.minute)
-    // TODO: invoker periodically pulls addMap message from kafka.
 
 
     val invoker = try {
@@ -170,12 +167,11 @@ object Invoker {
 
     Scheduler.scheduleWaitAtMost(1.seconds)(() => {
       var activeIPset = invoker.getAddrMap()
-      val path = Paths.get("/addrMap/test-pingmessage.txt")
-      Files.write(path, activeIPset.mkString("|").getBytes())
 
       val myinvokerInstance =
         InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, activeIPset.mkString("|"))
-        producer.send("health", PingMessage(myinvokerInstance)).andThen {
+
+      producer.send("health", PingMessage(myinvokerInstance)).andThen {
         case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
       }
     })

@@ -27,7 +27,7 @@ import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 import org.apache.kafka.clients.producer.RecordMetadata
-import akka.actor.{Actor, ActorRef, ActorRefFactory, FSM, Props}
+import akka.actor.{Actor, ActorRef, ActorRefFactory, ActorSystem, FSM, Props}
 import akka.actor.FSM.CurrentState
 import akka.actor.FSM.SubscribeTransitionCallBack
 import akka.actor.FSM.Transition
@@ -103,6 +103,8 @@ final case class InvokerInfo(buffer: RingBuffer[InvocationFinishedResult])
 class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef,
                   sendActivationToInvoker: (ActivationMessage, InvokerInstanceId) => Future[RecordMetadata],
                   pingConsumer: MessageConsumer,
+                  pingProducer: MessageProducer,
+                  actorSystem: ActorSystem,
                   monitor: Option[ActorRef])
     extends Actor {
 
@@ -161,6 +163,14 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
     logging.info(this, s"invoker status changed to ${pretty.mkString(", ")}")
   }
 
+
+  def dumpPingMsg(p: PingMessage): Future[Unit] = {
+    val path = Paths.get("/addrMap/pingmsg.txt")
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes())
+    //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.APPEND)
+    Future.successful(())
+  }
+
   /** Receive Ping messages from invokers. */
   val pingPollDuration: FiniteDuration = 1.second
   val invokerPingFeed: ActorRef = context.system.actorOf(Props {
@@ -173,13 +183,6 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
       processInvokerPing,
       logHandoff = false)
   })
-
-  def dumpPingMsg(p: PingMessage): Future[Unit] = {
-    val path = Paths.get("/addrMap/pingmsg.txt")
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes())
-//    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.APPEND)
-    Future.successful(())
-  }
 
   def processInvokerPing(bytes: Array[Byte]): Future[Unit] = Future {
     val raw = new String(bytes, StandardCharsets.UTF_8)
@@ -194,6 +197,17 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
         logging.error(this, s"failed processing message: $raw with $t")
     }
   }
+
+
+  Scheduler.scheduleWaitAtMost(1.seconds)(() => {
+    val myinvokerInstance =
+      InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), IPsetString="A addrMap message from controller to invoker")
+
+    pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
+      case Failure(t) => logging.error(this, s"failed to ping the controller: $t")
+    }
+  })(actorSystem, logging)
+
 
   /** Pads a list to a given length using the given function to compute entries */
   def padToIndexed[A](list: IndexedSeq[A], n: Int, f: (Int) => A): IndexedSeq[A] = list ++ (list.size until n).map(f)
@@ -265,8 +279,10 @@ object InvokerPool {
   def props(f: (ActorRefFactory, InvokerInstanceId) => ActorRef,
             p: (ActivationMessage, InvokerInstanceId) => Future[RecordMetadata],
             pc: MessageConsumer,
+            pp: MessageProducer,
+            as: ActorSystem,
             m: Option[ActorRef] = None): Props = {
-    Props(new InvokerPool(f, p, pc, m))
+    Props(new InvokerPool(f, p, pc, pp, as, m))
   }
 
   /** A stub identity for invoking the test action. This does not need to be a valid identity. */
