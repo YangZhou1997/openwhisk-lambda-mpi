@@ -22,7 +22,7 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.Calendar
 
 import akka.Done
-import akka.actor.{ActorSystem, CoordinatedShutdown}
+import akka.actor.{Actor, ActorSystem, Cancellable, CoordinatedShutdown, Props}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigValueFactory
 import kamon.Kamon
@@ -40,8 +40,8 @@ import org.apache.openwhisk.spi.SpiLoader
 import org.apache.openwhisk.utils.ExecutionContextFactory
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
-import scala.util.{Failure, Try}
+import scala.concurrent.{Await}
+import scala.util.{Failure, Success, Try}
 
 case class CmdLineArgs(uniqueName: Option[String] = None, id: Option[Int] = None, displayedName: Option[String] = None)
 
@@ -168,28 +168,92 @@ object Invoker {
       case e: Exception => abort(s"Failed to initialize reactive invoker: ${e.getMessage}")
     }
 
+
+
     var lastActiveIPSetLocal = Set[String]() // storing the activeIPset in last second.
 
-    Scheduler.scheduleWaitAtMost(1.seconds)(() => {
-      var activeIPSetLocal = invoker.getAddrMap()
-//      invoker.writeAddrMap()
+    case object WorkOnceNow
+    case object ScheduledWork
+    class MyWorker(initialDelay: FiniteDuration,
+                         interval: FiniteDuration,
+                         alwaysWait: Boolean,
+                         name: String)(implicit logging: Logging, transid: TransactionId)
+      extends Actor {
+      implicit val ec = context.dispatcher
 
-      val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
-      val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
-      lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
+      var lastSchedule: Option[Cancellable] = None
 
-      val myinvokerInstance =
-        InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
-
-      val path = Paths.get("/addrMap/addrMapLocal.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-
-      producer.send("health", PingMessage(myinvokerInstance)).andThen {
-        case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
+      override def preStart() = {
+        if (initialDelay != Duration.Zero) {
+          lastSchedule = Some(context.system.scheduler.scheduleOnce(initialDelay, self, ScheduledWork))
+        } else {
+          self ! ScheduledWork
+        }
       }
-    })
+      override def postStop() = {
+        logging.debug(this, s"$name shutdown")
+        lastSchedule.foreach(_.cancel())
+      }
+
+      def receive = {
+        case WorkOnceNow => Try{
+          var activeIPSetLocal = invoker.getAddrMap()
+          //      invoker.writeAddrMap()
+
+          val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
+          val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
+          lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
+
+          val myinvokerInstance =
+            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
+
+          val path = Paths.get("/addrMap/addrMapLocal.txt")
+                Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//          Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n")getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+
+          producer.send("health", PingMessage(myinvokerInstance)).andThen {
+            case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
+          }
+        }
+
+        case ScheduledWork =>
+          val deadline = interval.fromNow
+          Try{
+            var activeIPSetLocal = invoker.getAddrMap()
+            //      invoker.writeAddrMap()
+
+            val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
+            val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
+            lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
+
+            val myinvokerInstance =
+              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
+
+            val path = Paths.get("/addrMap/addrMapLocal.txt")
+                  Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//            Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+
+            producer.send("health", PingMessage(myinvokerInstance)).andThen {
+              case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
+            }
+          } match {
+            case Success(result) =>
+              result onComplete { _ =>
+                val timeToWait = if (alwaysWait) interval else deadline.timeLeft.max(Duration.Zero)
+                // context might be null here if a PoisonPill is sent while doing computations
+                lastSchedule = Option(context).map(_.system.scheduler.scheduleOnce(timeToWait, self, ScheduledWork))
+              }
+
+            case Failure(e) =>
+              logging.error(name, s"halted because ${e.getMessage}")
+          }
+      }
+    }
+
+
+    actorSystem.actorOf(Props(new MyWorker(Duration.Zero, 1.seconds, false, "Scheduler")(logging = logger, transid = TransactionId.unknown)))
 
 
     val port = config.servicePort.toInt

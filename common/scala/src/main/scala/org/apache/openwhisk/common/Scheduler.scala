@@ -52,6 +52,7 @@ object Scheduler {
     implicit val ec = context.dispatcher
 
     var lastSchedule: Option[Cancellable] = None
+    var lastActiveIPSetLocal = Set[String]() // storing the activeIPset in last second.
 
     override def preStart() = {
       if (initialDelay != Duration.Zero) {
