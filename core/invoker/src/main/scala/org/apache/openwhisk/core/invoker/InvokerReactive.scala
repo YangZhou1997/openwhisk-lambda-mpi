@@ -22,7 +22,7 @@ import java.time.Instant
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.Calendar
 
-import akka.actor.{Actor, ActorRefFactory, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorRefFactory, ActorSystem, Props}
 import akka.event.Logging.InfoLevel
 import akka.stream.ActorMaterializer
 import org.apache.kafka.common.errors.RecordTooLargeException
@@ -44,6 +44,31 @@ import org.apache.openwhisk.core.database.UserContext
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
+
+
+case class updateActiveIPSetPM(p: PingMessage)
+class updateActiveIPSetActor extends Actor {
+
+  var lastActiveIPSet: Set[String] = Set()
+  var activeIPSet: Set[String] = Set()
+
+  def receive: Receive = {
+    case updateActiveIPSetPM(p) => {
+      val path = Paths.get("/addrMap/addrMap.txt")
+      //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "lastActiveIPSet: " + (lastActiveIPSet - "").mkString("&") +  "; activeIPSet: " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+      val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
+      val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
+      lastActiveIPSet = activeIPSet
+      activeIPSet --= rmIPs
+      activeIPSet ++= newIPs
+
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      //        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    }
+  }
+}
 
 object InvokerReactive {
 
@@ -216,49 +241,30 @@ class InvokerReactive(
     containerFactory.writeAddrMap()
   }
 
-  class updateActiveIPSetActor extends Actor {
-
-    var lastActiveIPSet: Set[String] = Set()
-    var activeIPSet: Set[String] = Set()
-
-    def receive: Receive = {
-      case p: PingMessage => {
-        val path = Paths.get("/addrMap/addrMap.txt")
-        //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "lastActiveIPSet: " + (lastActiveIPSet - "").mkString("&") +  "; activeIPSet: " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-        val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
-        val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
-        lastActiveIPSet = activeIPSet
-        activeIPSet --= rmIPs
-        activeIPSet ++= newIPs
-
-        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-      }
-    }
-  }
-//  var bossUpdateActiveIPSetActor = actorSystem.actorOf(Props[updateActiveIPSetActor])
+  var bossUpdateActiveIPSetActor: ActorRef = actorSystem.actorOf(Props(new updateActiveIPSetActor))
 
 
-  var lastActiveIPSet: Set[String] = Set()
-  var activeIPSet: Set[String] = Set()
+//  updating shared states in actor system has some race condition
 
-
-  def updateActiveIPSet(p: PingMessage): Future[Unit] = {
-    val path = Paths.get("/addrMap/addrMap.txt")
-    //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "lastActiveIPSet: " + (lastActiveIPSet - "").mkString("&") +  "; activeIPSet: " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-    val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
-    val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
-    lastActiveIPSet = activeIPSet
-    activeIPSet --= rmIPs
-    activeIPSet ++= newIPs
-
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-    //        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-    Future.successful(())
-  }
+//  var lastActiveIPSet: Set[String] = Set()
+//  var activeIPSet: Set[String] = Set()
+//
+//
+//  def updateActiveIPSet(p: PingMessage): Future[Unit] = {
+//    val path = Paths.get("/addrMap/addrMap.txt")
+//    //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "lastActiveIPSet: " + (lastActiveIPSet - "").mkString("&") +  "; activeIPSet: " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//
+//    val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
+//    val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
+//    lastActiveIPSet = activeIPSet
+//    activeIPSet --= rmIPs
+//    activeIPSet ++= newIPs
+//
+//    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//    //        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//
+//    Future.successful(())
+//  }
 
   /** Is called when an addrMapMessage is read from Kafka */
   def processAddrMapMessage(bytes: Array[Byte]): Future[Unit] = {
@@ -266,8 +272,8 @@ class InvokerReactive(
       .flatMap(Future.fromTry)
       .flatMap { msg =>
         addrMapActivationFeed ! MessageFeed.Processed
-//        bossUpdateActiveIPSetActor ! msg
-        updateActiveIPSet(msg)
+        bossUpdateActiveIPSetActor ! updateActiveIPSetPM(msg)
+//        updateActiveIPSet(msg)
         Future.successful(())
       }
   }
