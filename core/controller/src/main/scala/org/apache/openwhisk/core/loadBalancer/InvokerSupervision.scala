@@ -170,6 +170,8 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
     Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
     val temp: Array[String] = p.instance.IPsetString.split("&")
+//    if temp.length: we need to handle the
+
     val rmIPs: Set[String] = temp(0).split("|").toSet
     val newIPs: Set[String] = temp(1).split("|").toSet
     lastActiveIPSet = activeIPSet

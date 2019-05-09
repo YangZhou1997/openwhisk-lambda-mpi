@@ -20,6 +20,7 @@ package org.apache.openwhisk.core.invoker
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.Calendar
 
 import akka.actor.{ActorRefFactory, ActorSystem, Props}
 import akka.event.Logging.InfoLevel
@@ -218,15 +219,15 @@ class InvokerReactive(
   var lastActiveIPSet: Set[String] = Set()
   var activeIPSet: Set[String] = Set()
   def updateActiveIPSet(p: PingMessage): Future[Unit] = {
-    val temp: Array[String] = p.instance.IPsetString.split("&")
-    val rmIPs: Set[String] = temp(0).split("|").toSet
-    val newIPs: Set[String] = temp(1).split("|").toSet
-    lastActiveIPSet = activeIPSet
-    activeIPSet --= rmIPs
-    activeIPSet ++= newIPs
+//    val temp: Array[String] = p.instance.IPsetString.split("&")
+//    val rmIPs: Set[String] = temp(0).split("|").toSet
+//    val newIPs: Set[String] = temp(1).split("|").toSet
+//    lastActiveIPSet = activeIPSet
+//    activeIPSet --= rmIPs
+//    activeIPSet ++= newIPs
 
     val path = Paths.get("/addrMap/addrMap.txt")
-    Files.write(path, (p.instance.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.instance.IPsetString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
     //    Files.write(path, activeIPSet.mkString("|").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     Future.successful(())

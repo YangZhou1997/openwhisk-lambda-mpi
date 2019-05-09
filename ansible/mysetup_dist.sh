@@ -4,6 +4,7 @@
 
 # docker run -d --restart=always --name registry -v /users/yangzhou/certs:/certs -e REGISTRY_HTTP_ADDR=0.0.0.0:444 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key -p 444:444 registry:2
 
+sudo rm -rf /users/yangzhou/openwhisk/addrMap/*.txt
 ssh yangzhou@node-1.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us sudo rm -rf /users/yangzhou/openwhisk/addrMap/*.txt
 ssh yangzhou@node-2.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us sudo rm -rf /users/yangzhou/openwhisk/addrMap/*.txt
 ssh yangzhou@node-3.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us sudo rm -rf /users/yangzhou/openwhisk/addrMap/*.txt
