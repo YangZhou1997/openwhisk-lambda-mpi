@@ -98,3 +98,4 @@ virtualenv/
 teragen
 *ipaddr
 core
+*.txt
