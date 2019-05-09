@@ -171,6 +171,8 @@ object Invoker {
 
     Scheduler.scheduleWaitAtMost(1.seconds)(() => {
       var activeIPSetLocal = invoker.getAddrMap()
+      invoker.writeAddrMap()
+
       val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
       val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
       lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
@@ -179,7 +181,8 @@ object Invoker {
         InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("|") + "&" + newIPs.mkString("|"))
 
       val path = Paths.get("/addrMap/addrMapLocal.txt")
-      Files.write(path, myinvokerInstance.toString.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      Files.write(path, (activeIPSetLocal.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
 
       producer.send("health", PingMessage(myinvokerInstance)).andThen {
         case Failure(t) => logger.error(this, s"failed to ping the controller: $t")

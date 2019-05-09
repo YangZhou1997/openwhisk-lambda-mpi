@@ -211,6 +211,9 @@ class InvokerReactive(
     containerFactory.getAddrMap()
   }
 
+  def writeAddrMap(): Unit = {
+    containerFactory.writeAddrMap()
+  }
 
   var lastActiveIPSet: Set[String] = Set()
   var activeIPSet: Set[String] = Set()
@@ -223,8 +226,9 @@ class InvokerReactive(
     activeIPSet ++= newIPs
 
     val path = Paths.get("/addrMap/addrMap.txt")
-    Files.write(path, p.instance.toString.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//    Files.write(path, activeIPSet.mkString("|").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    Files.write(path, (p.instance.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+    //    Files.write(path, activeIPSet.mkString("|").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     Future.successful(())
   }
 

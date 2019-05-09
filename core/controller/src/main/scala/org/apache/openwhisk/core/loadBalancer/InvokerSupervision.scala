@@ -167,7 +167,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
   var activeIPSet: Set[String] = Set()
   def updateActiveIPSet(p: PingMessage): Future[Unit] = {
     val path = Paths.get("/addrMap/pingmsg.txt")
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
     val temp: Array[String] = p.instance.IPsetString.split("&")
     val rmIPs: Set[String] = temp(0).split("|").toSet
@@ -211,8 +211,12 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
     val newIPs = activeIPSet diff lastActiveIPSet
 
     val myinvokerInstance =
-      InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), IPsetString=rmIPs.mkString("|") + "&" + newIPs.mkString("|"))
+//      InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), IPsetString=rmIPs.mkString("|") + "&" + newIPs.mkString("|"))
+      InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), IPsetString=s"message from controller to invokers ${testCount}")
     testCount += 1
+
+    val path = Paths.get("/addrMap/addrMapMsg.txt")
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + myinvokerInstance.IPsetString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
     pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
       case Failure(t) => logging.error(this, s"failed to ping the controller: $t")

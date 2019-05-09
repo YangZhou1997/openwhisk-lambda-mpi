@@ -17,7 +17,7 @@
 
 package org.apache.openwhisk.core.containerpool.docker
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
@@ -59,7 +59,7 @@ object DockerContainer {
 
   def writeAddrMap(): Future[Unit] = {
     val path = Paths.get("/addrMap/test.txt")
-    Files.write(path, activeIPset.mkString("|").getBytes())
+    Files.write(path, (activeIPset.mkString("|") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     Future.successful(())
   }
 
