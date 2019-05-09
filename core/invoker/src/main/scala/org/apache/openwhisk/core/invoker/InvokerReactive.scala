@@ -218,18 +218,19 @@ class InvokerReactive(
 
   var lastActiveIPSet: Set[String] = Set()
   var activeIPSet: Set[String] = Set()
+
   def updateActiveIPSet(p: PingMessage): Future[Unit] = {
-//    val temp: Array[String] = p.instance.IPsetString.split("&")
-//    val rmIPs: Set[String] = temp(0).split("|").toSet
-//    val newIPs: Set[String] = temp(1).split("|").toSet
-//    lastActiveIPSet = activeIPSet
-//    activeIPSet --= rmIPs
-//    activeIPSet ++= newIPs
-
     val path = Paths.get("/addrMap/addrMap.txt")
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.instance.IPsetString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "lastActiveIPSet: " + (lastActiveIPSet - "").mkString("&") +  "; activeIPSet: " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-    //    Files.write(path, activeIPSet.mkString("|").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
+    val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
+    lastActiveIPSet = activeIPSet
+    activeIPSet --= rmIPs
+    activeIPSet ++= newIPs
+
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
     Future.successful(())
   }
 

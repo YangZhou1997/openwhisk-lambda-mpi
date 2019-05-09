@@ -204,7 +204,7 @@ class MesosContainerFactory(config: WhiskConfig,
 
   override def writeAddrMap(): Unit = {
     val path = Paths.get("/addrMap/test.txt")
-    Files.write(path, activeIPset.mkString("|").getBytes())
+    Files.write(path, activeIPset.mkString("&").getBytes())
     Future.successful(())
   }
 

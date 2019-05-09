@@ -312,7 +312,9 @@ class ShardingContainerPoolBalancer(
       messagingProvider,
       messageProducer,
       sendActivationToInvoker,
-      Some(monitor))
+      Some(monitor),
+      numInvokers = schedulingState.managedInvokers.size
+    )
 
   override protected def releaseInvoker(invoker: InvokerInstanceId, entry: ActivationEntry) = {
     schedulingState.invokerSlots
@@ -334,7 +336,8 @@ object ShardingContainerPoolBalancer extends LoadBalancerProvider {
         messagingProvider: MessagingProvider,
         messagingProducer: MessageProducer,
         sendActivationToInvoker: (MessageProducer, ActivationMessage, InvokerInstanceId) => Future[RecordMetadata],
-        monitor: Option[ActorRef]): ActorRef = {
+        monitor: Option[ActorRef],
+        numInvokers: Int): ActorRef = {
 
         InvokerPool.prepare(instance, WhiskEntityStore.datastore())
 
@@ -353,7 +356,7 @@ object ShardingContainerPoolBalancer extends LoadBalancerProvider {
             messagingProvider.getConsumer(whiskConfig, s"health${instance.asString}", "health", maxPeek = 128),
             messagingProvider.getProducer(whiskConfig, Some(ActivationEntityLimit.MAX_ACTIVATION_LIMIT)),
             actorSystem,
-            monitor))
+            monitor, numInvokers))
       }
 
     }

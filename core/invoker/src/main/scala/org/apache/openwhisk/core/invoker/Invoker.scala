@@ -19,6 +19,7 @@ package org.apache.openwhisk.core.invoker
 
 
 import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.Calendar
 
 import akka.Done
 import akka.actor.{ActorSystem, CoordinatedShutdown}
@@ -171,17 +172,18 @@ object Invoker {
 
     Scheduler.scheduleWaitAtMost(1.seconds)(() => {
       var activeIPSetLocal = invoker.getAddrMap()
-      invoker.writeAddrMap()
+//      invoker.writeAddrMap()
 
       val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
       val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
       lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
 
       val myinvokerInstance =
-        InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("|") + "&" + newIPs.mkString("|"))
+        InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
 
       val path = Paths.get("/addrMap/addrMapLocal.txt")
-      Files.write(path, (activeIPSetLocal.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
 
       producer.send("health", PingMessage(myinvokerInstance)).andThen {

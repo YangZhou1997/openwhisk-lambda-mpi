@@ -58,8 +58,8 @@ object DockerContainer {
   }
 
   def writeAddrMap(): Future[Unit] = {
-    val path = Paths.get("/addrMap/test.txt")
-    Files.write(path, (activeIPset.mkString("|") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    val path = Paths.get("/addrMap/test-WriteAddrMap-DockerContainer.txt")
+    Files.write(path, (activeIPset.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     Future.successful(())
   }
 

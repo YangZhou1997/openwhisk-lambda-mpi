@@ -32,7 +32,8 @@ case class InvokerInstanceId(val instance: Int,
                              uniqueName: Option[String] = None,
                              displayedName: Option[String] = None,
                              val userMemory: ByteSize,
-                             val IPsetString: String = "") {
+                             val rmIPs: String = "",
+                             val newIPs: String = "") {
 
   def toInt: Int = instance
 
@@ -47,7 +48,7 @@ case class ControllerInstanceId(val asString: String) {
 
 object InvokerInstanceId extends DefaultJsonProtocol {
   import org.apache.openwhisk.core.entity.size.{serdes => xserds}
-  implicit val serdes = jsonFormat5(InvokerInstanceId.apply)
+  implicit val serdes = jsonFormat6(InvokerInstanceId.apply)
 }
 
 
