@@ -89,6 +89,48 @@ case class CurrentInvokerPoolState(newState: IndexedSeq[InvokerHealth])
 // Data stored in the Invoker
 final case class InvokerInfo(buffer: RingBuffer[InvocationFinishedResult])
 
+
+case class updateActiveIPSet(p: PingMessage)
+
+class updataActiveIPSetActor(pingProducer: MessageProducer)
+                            (implicit transid: TransactionId, logging: Logging, timeout: Timeout, ec: ExecutionContext)
+  extends Actor {
+
+  var lastActiveIPSet: Set[String] = Set()
+  var activeIPSet: Set[String] = Set()
+  var syncThreshold: Int = 0
+
+  def receive: Receive = {
+    case updateActiveIPSet(p) => {
+
+      var path = Paths.get("/addrMap/pingmsg.txt")
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+      val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
+      val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
+      lastActiveIPSet = activeIPSet
+      activeIPSet --= rmIPs
+      activeIPSet ++= newIPs
+
+      syncThreshold += 1
+      if(syncThreshold == 4){
+        syncThreshold = 0
+        val myinvokerInstance =
+          InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), rmIPs = rmIPs.mkString("&"), newIPs = newIPs.mkString("&"))
+
+        path = Paths.get("/addrMap/addrMapMsg.txt")
+        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " +  newIPs.mkString("&") + "; syncThreshold" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+        pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
+          case Failure(t) => logging.error(this, s"failed to ping the controller: $t")}
+      }
+    }
+  }
+
+}
+
+
+
 /**
  * Actor representing a pool of invokers
  *
@@ -105,8 +147,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
                   pingConsumer: MessageConsumer,
                   pingProducer: MessageProducer,
                   actorSystem: ActorSystem,
-                  monitor: Option[ActorRef],
-                  numInvokers: Int)
+                  monitor: Option[ActorRef])
     extends Actor {
 
   import InvokerState._
@@ -164,33 +205,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
     logging.info(this, s"invoker status changed to ${pretty.mkString(", ")}")
   }
 
-  var lastActiveIPSet: Set[String] = Set()
-  var activeIPSet: Set[String] = Set()
-  var syncThreshold: Int = 0
-  def updateActiveIPSet(p: PingMessage): Future[Unit] = {
-    var path = Paths.get("/addrMap/pingmsg.txt")
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString + "; numInvokers" + numInvokers.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-    val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet
-    val newIPs: Set[String] = p.instance.newIPs.split("&").toSet
-    lastActiveIPSet = activeIPSet
-    activeIPSet --= rmIPs
-    activeIPSet ++= newIPs
-
-    syncThreshold += 1
-    if(syncThreshold == 4){
-      syncThreshold = 0
-      val myinvokerInstance =
-        InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), rmIPs = rmIPs.mkString("&"), newIPs = newIPs.mkString("&"))
-
-      path = Paths.get("/addrMap/addrMapMsg.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " +  newIPs.mkString("&") + "; syncThreshold" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-      pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
-        case Failure(t) => logging.error(this, s"failed to ping the controller: $t")}
-    }
-    Future.successful(())
-  }
+  var bossUpdateActiveIPSet: ActorRef = context.system.actorOf(Props(new updataActiveIPSetActor(pingProducer)))
 
   /** Receive Ping messages from invokers. */
   val pingPollDuration: FiniteDuration = 1.second
@@ -211,7 +226,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
       case Success(p: PingMessage) =>
         self ! p
         invokerPingFeed ! MessageFeed.Processed
-        updateActiveIPSet(p)
+        bossUpdateActiveIPSet ! updateActiveIPSet(p)
 
       case Failure(t) =>
         invokerPingFeed ! MessageFeed.Processed
@@ -309,9 +324,8 @@ object InvokerPool {
             pc: MessageConsumer,
             pp: MessageProducer,
             as: ActorSystem,
-            m: Option[ActorRef] = None,
-            numInvokers: Int): Props = {
-    Props(new InvokerPool(f, p, pc, pp, as, m, numInvokers))
+            m: Option[ActorRef] = None): Props = {
+    Props(new InvokerPool(f, p, pc, pp, as, m))
   }
 
   /** A stub identity for invoking the test action. This does not need to be a valid identity. */
