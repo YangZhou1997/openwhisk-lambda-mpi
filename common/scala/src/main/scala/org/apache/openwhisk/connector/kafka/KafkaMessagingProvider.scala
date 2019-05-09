@@ -65,10 +65,7 @@ object KafkaMessagingProvider extends MessagingProvider {
       .flatMap(client => {
         val partitions = 1
 
-        var myreplicationFactor = kafkaConfig.replicationFactor
-        if (topic == "addrMap"){myreplicationFactor = 1} // temporarilly using 4 invokers; needs to furtuer change.
-
-        val nt = new NewTopic(topic, partitions, myreplicationFactor).configs(topicConfig.asJava)
+        val nt = new NewTopic(topic, partitions, kafkaConfig.replicationFactor).configs(topicConfig.asJava)
 
         def createTopic(retries: Int = 5): Try[Unit] = {
           Try(client.createTopics(List(nt).asJava).values().get(topic).get())

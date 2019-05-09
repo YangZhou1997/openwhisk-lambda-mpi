@@ -18,9 +18,8 @@
 package org.apache.openwhisk.core.invoker
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
 import java.time.Instant
-import java.util.Calendar
+import java.nio.file.{Files, Paths, StandardOpenOption}
 
 import akka.actor.{ActorRefFactory, ActorSystem, Props}
 import akka.event.Logging.InfoLevel
@@ -135,8 +134,9 @@ class InvokerReactive(
 
 
   private val addrMapTopic = "addrMap"
+  private val addrMapGroup = s"addrMap${instance.toInt}"
   private val addrMapConsumer =
-    msgProvider.getConsumer(config, addrMapTopic, addrMapTopic, maxPeek, maxPollInterval = TimeLimit.MAX_DURATION + 1.minute)
+    msgProvider.getConsumer(config, addrMapGroup, addrMapTopic, maxPeek, maxPollInterval = TimeLimit.MAX_DURATION + 1.minute)
 
   private val addrMapActivationFeed = actorSystem.actorOf(Props {
     new MessageFeed("pullAddrMap", logging, addrMapConsumer, maxPeek, 1.second, processAddrMapMessage)
@@ -211,10 +211,20 @@ class InvokerReactive(
     containerFactory.getAddrMap()
   }
 
-  def dumpPingMsg(p: PingMessage): Future[Unit] = {
-    val path = Paths.get("/addrMap/pingmsg.txt")
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes())
-    //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.APPEND)
+
+  var lastActiveIPSet: Set[String] = Set()
+  var activeIPSet: Set[String] = Set()
+  def updateActiveIPSet(p: PingMessage): Future[Unit] = {
+    val temp: Array[String] = p.instance.IPsetString.split("&")
+    val rmIPs: Set[String] = temp(0).split("|").toSet
+    val newIPs: Set[String] = temp(1).split("|").toSet
+    lastActiveIPSet = activeIPSet
+    activeIPSet --= rmIPs
+    activeIPSet ++= newIPs
+
+    val path = Paths.get("/addrMap/addrMap.txt")
+    Files.write(path, p.instance.toString.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//    Files.write(path, activeIPSet.mkString("|").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     Future.successful(())
   }
 
@@ -224,7 +234,7 @@ class InvokerReactive(
       .flatMap(Future.fromTry)
       .flatMap { msg =>
         addrMapActivationFeed ! MessageFeed.Processed
-        dumpPingMsg(msg)
+        updateActiveIPSet(msg)
       }
   }
 
@@ -255,8 +265,8 @@ class InvokerReactive(
           // if the doc revision is missing, then bypass cache
           if (actionid.rev == DocRevision.empty) logging.warn(this, s"revision was not provided for ${actionid.id}")
 
-          containerFactory.addIP("test ip from controller") // needs to be replaced by the IP contained in controller messages.
-          containerFactory.writeAddrMap()
+//          containerFactory.addIP("test ip from controller") // needs to be replaced by the IP contained in controller messages.
+//          containerFactory.writeAddrMap()
 
           WhiskAction
             .get(entityStore, actionid.id, actionid.rev, fromCache = actionid.rev != DocRevision.empty)

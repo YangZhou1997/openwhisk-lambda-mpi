@@ -18,7 +18,7 @@
 package org.apache.openwhisk.core.loadBalancer
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.Calendar
 
 import scala.collection.immutable
@@ -163,11 +163,18 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
     logging.info(this, s"invoker status changed to ${pretty.mkString(", ")}")
   }
 
-
-  def dumpPingMsg(p: PingMessage): Future[Unit] = {
+  var lastActiveIPSet: Set[String] = Set()
+  var activeIPSet: Set[String] = Set()
+  def updateActiveIPSet(p: PingMessage): Future[Unit] = {
     val path = Paths.get("/addrMap/pingmsg.txt")
-    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes())
-    //    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.APPEND)
+    Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + p.toString).getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+
+    val temp: Array[String] = p.instance.IPsetString.split("&")
+    val rmIPs: Set[String] = temp(0).split("|").toSet
+    val newIPs: Set[String] = temp(1).split("|").toSet
+    lastActiveIPSet = activeIPSet
+    activeIPSet --= rmIPs
+    activeIPSet ++= newIPs
     Future.successful(())
   }
 
@@ -190,7 +197,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
       case Success(p: PingMessage) =>
         self ! p
         invokerPingFeed ! MessageFeed.Processed
-        dumpPingMsg(p)
+        updateActiveIPSet(p)
 
       case Failure(t) =>
         invokerPingFeed ! MessageFeed.Processed
@@ -198,10 +205,14 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
     }
   }
 
-
+  var testCount: Int = 0
   Scheduler.scheduleWaitAtMost(1.seconds)(() => {
+    val rmIPs = lastActiveIPSet diff activeIPSet
+    val newIPs = activeIPSet diff lastActiveIPSet
+
     val myinvokerInstance =
-      InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), IPsetString="A addrMap message from controller to invoker")
+      InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), IPsetString=rmIPs.mkString("|") + "&" + newIPs.mkString("|"))
+    testCount += 1
 
     pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
       case Failure(t) => logging.error(this, s"failed to ping the controller: $t")

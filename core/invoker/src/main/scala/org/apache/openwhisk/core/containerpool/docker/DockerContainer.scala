@@ -174,8 +174,8 @@ object DockerContainer {
       }
 //      ip(0): bridge ip, used for invoker talking to functions
 //      ip(1): overlay ip, used for functions talking with each other.
-      _ <- addIP(ip(1).host)
-      _ <- writeAddrMap()
+//      _ <- addIP(ip(1).host)
+//      _ <- writeAddrMap()
     } yield new DockerContainer(id, ip(0), ip(1), useRunc)
   }
 }
@@ -209,13 +209,18 @@ class DockerContainer(protected val id: ContainerId,
   protected val filePollInterval: FiniteDuration = 5.milliseconds
 
   override def suspend()(implicit transid: TransactionId): Future[Unit] = {
-    super.suspend().flatMap(_ => if (useRunc) runc.pause(id) else docker.pause(id))
+    super.suspend().flatMap(_ => {
+      DockerContainer.rmIP(addrOverlay.host)
+      if (useRunc) runc.pause(id) else docker.pause(id)
+    })
   }
   override def resume()(implicit transid: TransactionId): Future[Unit] = {
+    DockerContainer.addIP(addrOverlay.host)
     (if (useRunc) { runc.resume(id) } else { docker.unpause(id) }).flatMap(_ => super.resume())
   }
   override def destroy()(implicit transid: TransactionId): Future[Unit] = {
     super.destroy()
+    DockerContainer.rmIP(addrOverlay.host)
     docker.rm(id)
   }
 
@@ -272,7 +277,10 @@ class DockerContainer(protected val id: ContainerId,
                 case true  => MemoryExhausted()
                 case false => error
               }
-            case other => Future.successful(other)
+            case other => {
+              DockerContainer.addIP(addrOverlay.host)
+              Future.successful(other)
+            }
           }
           .fold(_.map(Left(_)), right => Future.successful(Right(right)))
           .map(res => RunResult(Interval(started, finished), res))

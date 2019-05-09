@@ -340,11 +340,12 @@ object ShardingContainerPoolBalancer extends LoadBalancerProvider {
 
         val msgProvider = SpiLoader.get[MessagingProvider]
         if (msgProvider
-          .ensureTopic(whiskConfig, topic = "addrMap", topicConfig = "health")
+          .ensureTopic(whiskConfig, topic = "addrMap", topicConfig = "addrMap")
           .isFailure) {
           logging.warn(this, "failure during msgProvider.ensureTopic for topic addrMap")
         }
 
+        // create a controller: it has a group id specified by the controller instance ID under the health topic.
         actorRefFactory.actorOf(
           InvokerPool.props(
             (f, i) => f.actorOf(InvokerActor.props(i, instance)),

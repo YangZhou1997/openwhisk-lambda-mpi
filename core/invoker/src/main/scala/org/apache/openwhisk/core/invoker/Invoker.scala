@@ -18,6 +18,8 @@
 package org.apache.openwhisk.core.invoker
 
 
+import java.nio.file.{Files, Paths, StandardOpenOption}
+
 import akka.Done
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.stream.ActorMaterializer
@@ -165,11 +167,19 @@ object Invoker {
       case e: Exception => abort(s"Failed to initialize reactive invoker: ${e.getMessage}")
     }
 
+    var lastActiveIPSetLocal = Set[String]() // storing the activeIPset in last second.
+
     Scheduler.scheduleWaitAtMost(1.seconds)(() => {
-      var activeIPset = invoker.getAddrMap()
+      var activeIPSetLocal = invoker.getAddrMap()
+      val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
+      val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
+      lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
 
       val myinvokerInstance =
-        InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, activeIPset.mkString("|"))
+        InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("|") + "&" + newIPs.mkString("|"))
+
+      val path = Paths.get("/addrMap/addrMapLocal.txt")
+      Files.write(path, myinvokerInstance.toString.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
       producer.send("health", PingMessage(myinvokerInstance)).andThen {
         case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
