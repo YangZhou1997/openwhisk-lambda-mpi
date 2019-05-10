@@ -21,13 +21,16 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.util.Timeout
 import akka.stream._
+import akka.pattern.ask
 import akka.stream.scaladsl.Framing.FramingException
 import spray.json._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import org.apache.openwhisk.common.Logging
 import org.apache.openwhisk.common.TransactionId
@@ -42,32 +45,63 @@ import spray.json._
 import org.apache.openwhisk.core.containerpool.logging.LogLine
 import org.apache.openwhisk.core.entity.ExecManifest.ImageName
 import org.apache.openwhisk.http.Messages
+import org.apache.openwhisk.utils.ExecutionContextFactory
 
 
+case class addIPMsg(ip: String)
+case class rmIPMsg(ip: String)
 
+class updateActiveIPSetLocalActor extends Actor {
+
+  var activeIPset = Set[String]()
+
+  def receive: Receive = {
+    case addIPMsg(ip) => {
+      activeIPset += ip
+    }
+    case rmIPMsg(ip) =>{
+      activeIPset -= ip
+    }
+    case "writeAddrMapMsg" =>{
+      val path = Paths.get("/addrMap/test-WriteAddrMap-DockerContainer.txt")
+      Files.write(path, (activeIPset.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    }
+    case "getAddrMapMsg" =>{
+      sender ! activeIPset
+    }
+  }
+}
 
 object DockerContainer {
 
   private val byteStringSentinel = ByteString(Container.ACTIVATION_LOG_SENTINEL)
 
-  private var activeIPset = Set[String]()
+  val ec = ExecutionContextFactory.makeCachedThreadPoolExecutionContext()
+  val actorSystem: ActorSystem =
+    ActorSystem(name = "container-actor-system", defaultExecutionContext = Some(ec))
+
+  var bossUpdateActiveLocalIPSetActor: ActorRef = actorSystem.actorOf(Props(new updateActiveIPSetLocalActor))
+
   def addIP(ip: String): Future[Unit] = {
-    activeIPset += ip
+    bossUpdateActiveLocalIPSetActor ! addIPMsg(ip)
     Future.successful(())
   }
   def rmIP(ip: String): Future[Unit] = {
-    activeIPset -= ip
+    bossUpdateActiveLocalIPSetActor ! rmIPMsg(ip)
     Future.successful(())
   }
 
   def writeAddrMap(): Future[Unit] = {
-    val path = Paths.get("/addrMap/test-WriteAddrMap-DockerContainer.txt")
-    Files.write(path, (activeIPset.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    bossUpdateActiveLocalIPSetActor ! "writeAddrMapMsg"
     Future.successful(())
   }
 
   def getAddrMap(): Set[String] = {
-    activeIPset
+    bossUpdateActiveLocalIPSetActor ! "getAddrMapMsg"
+    implicit val timeout = Timeout(Duration(1, TimeUnit.SECONDS))
+    val future = bossUpdateActiveLocalIPSetActor ? "getAddrMapMsg"
+    var myActiveIPset: Set[String] = Await.result(future, timeout.duration).asInstanceOf[Set[String]]
+    myActiveIPset
   }
 
   /**

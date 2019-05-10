@@ -11,5 +11,5 @@ import string
 
 
 if __name__ == "__main__":
-    for i in range(0, 1000):
+    for i in range(0, 200):
         subprocess.check_output("wsk -i action invoke %s" % ("/whisk.system/samples/wordCount"), shell=True)
