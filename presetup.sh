@@ -11,8 +11,8 @@ sudo pip install pyopenssl
 cd tools/ubuntu-setup && ./all.sh
 sudo usermod -a -G docker $USER
 
-echo "export OPENWHISK_TMP_DIR=/users/yangzhou/openwhisk/ansible/tmp" >> ~/.bashrc
-echo "export PATH=/users/yangzhou/openwhisk/bin:\$PATH" >> ~/.bashrc
+echo "export OPENWHISK_TMP_DIR=~/openwhisk/ansible/tmp" >> ~/.bashrc
+echo "export PATH=~/openwhisk/bin:\$PATH" >> ~/.bashrc
 
 echo "alias wsk-local='WSK_CONFIG_FILE=~/.wskprops-local wsk -i'" >> ~/.bashrc
 echo "alias wsk='wsk -i'" >> ~/.bashrc

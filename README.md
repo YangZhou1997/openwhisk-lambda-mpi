@@ -48,6 +48,12 @@ Machine details:
 | node-3 | node-3.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-3.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.1 |
 | node-4 | node-4.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | node-4.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us | 10.10.1.4 |
 
+### Overlay network in Swarm Mode
+```
+cd openwhisk/ansible
+./mysetup_swarm.sh
+```
+
 ### Setup SSH for ansible
 Make sure that each server can ssh to the other four servers vai ssh without password. 
 

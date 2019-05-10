@@ -9,8 +9,11 @@ cd ..
 ./gradlew distDocker
 cd ansible
 
-sudo chown -R yangzhou:lambda-mpi-PG0 tmp/
-sudo chown -R yangzhou:lambda-mpi-PG0 ../bin/wsk
+[ -f "environments/local/ansible_local.cfg" ] && cp environments/local/ansible_local.cfg ansible.cfg
+
+
+sudo chown -R $USER:lambda-mpi-PG0 tmp/
+sudo chown -R $USER:lambda-mpi-PG0 ../bin/wsk
 
 
 ansible-playbook couchdb.yml
