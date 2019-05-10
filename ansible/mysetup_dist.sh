@@ -39,7 +39,7 @@ ansible-playbook -i environments/jenkins couchdb.yml
 ansible-playbook -i environments/jenkins initdb.yml
 ansible-playbook -i environments/jenkins wipe.yml
 ansible-playbook -i environments/jenkins apigateway.yml
-ansible-playbook -i environments/jenkins openwhisk.yml
+ansible-playbook -i environments/jenkins -e limit_invocations_per_minute=999999 -e limit_invocations_concurrent=999999 openwhisk.yml
 ansible-playbook -i environments/jenkins properties.yml
 ansible-playbook -i environments/jenkins routemgmt.yml
 ansible-playbook -i environments/jenkins postdeploy.yml
