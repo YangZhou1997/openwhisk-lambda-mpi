@@ -99,3 +99,4 @@ teragen
 *ipaddr
 core
 *.txt
+venv/
