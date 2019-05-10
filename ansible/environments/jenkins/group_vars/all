@@ -33,6 +33,6 @@ env_hosts_dir: "{{ playbook_dir }}/environments/jenkins"
 
 container_pool_akka_client: true
 runtimes_enable_concurrency: true
-limit_action_concurrency_max: 500
+limit_action_concurrency_max: 216000
 
 invoker1_machine: node-2.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us
