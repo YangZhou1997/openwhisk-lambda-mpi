@@ -30,8 +30,8 @@ class wsk_fib:
 
     def create_func(self):
         for i in range(0, len(self.funcName)):
-            subprocess.check_output("wsk -i action update --docker yangzhou1997/python3action:mpi %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
-            # subprocess.check_output("wsk -i action update %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
+            # subprocess.check_output("wsk -i action update --docker yangzhou1997/python3action:mpi %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
+            subprocess.check_output("wsk -i action update %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
 
 
     def start_function_instance(self, work_id):
@@ -56,6 +56,7 @@ class wsk_fib:
             returned_value = subprocess.check_output("wsk -i activation get %s | sed '1d'" % (self.fib_id[i]), shell=True)
             results = json.loads(returned_value.decode("utf-8"))
             self.fib_log[i] = results
+            print(results)
 
 
 if __name__ == "__main__":
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     wsk_ts_test.start_fibs()
     duration = 0.0
     for i in range(0, wsk_ts_test.fib_num):
-        print(wsk_ts_test.fib_log[i]['duration'])
+        print(wsk_ts_test.fib_log[i]['response']['result']['fibonacci'])
         duration += wsk_ts_test.fib_log[i]['duration']
     print(duration / wsk_ts_test.fib_num)
 

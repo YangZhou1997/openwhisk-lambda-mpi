@@ -18,6 +18,8 @@
 package org.apache.openwhisk.core.loadBalancer
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.Calendar
 
 import scala.collection.immutable
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -122,8 +124,9 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
   var status = IndexedSeq[InvokerHealth]()
 
 
-  var lastActiveIPSet: Set[String] = Set()
   var activeIPSet: Set[String] = Set()
+  var rmIPs: Set[String] = Set()
+  var newIPs: Set[String] = Set()
   var syncThreshold: Int = 0
 
   def receive: Receive = {
@@ -141,27 +144,32 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
 
 //    extract rmIPs and newIPs from pingmessage, and send back if there are numInvokers pingmessage accumulated and there is IPset changed.
 
-//      var path = Paths.get("/addrMap/pingmsg.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + p.instance.rmIPs + "; newIPs: " + p.instance.newIPs + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      var path = Paths.get("/addrMap/pingmsg.txt")
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + p.instance.rmIPs + "; newIPs: " + p.instance.newIPs + "; syncThreshold=" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-      val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet - ""
-      val newIPs: Set[String] = p.instance.newIPs.split("&").toSet - ""
-      lastActiveIPSet = activeIPSet
-      activeIPSet --= rmIPs
-      activeIPSet ++= newIPs
+      rmIPs ++= p.instance.rmIPs.split("&").toSet - ""
+      newIPs ++= p.instance.newIPs.split("&").toSet - ""
 
       syncThreshold += 1
-      if(syncThreshold == 4){
-        syncThreshold = 0
+      if(syncThreshold >= 4){
+        syncThreshold = 4 // avoid int overflow
+
         if(rmIPs.size != 0 || newIPs.size != 0){
+
           val myinvokerInstance =
             InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), rmIPs = rmIPs.mkString("&"), newIPs = newIPs.mkString("&"))
 
-//        path = Paths.get("/addrMap/addrMapMsg.txt")
-//        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " +  newIPs.mkString("&") + "; syncThreshold" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+        path = Paths.get("/addrMap/addrMapMsg.txt")
+        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " +  newIPs.mkString("&") + "; syncThreshold" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
           pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
             case Failure(t) => logging.error(this, s"failed to ping the controller: $t")}
+
+          syncThreshold = 0
+//          activeIPSet --= rmIPs
+//          activeIPSet ++= newIPs
+          rmIPs = Set[String]()
+          newIPs = Set[String]()
         }
       }
 

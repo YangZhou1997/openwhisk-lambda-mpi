@@ -18,6 +18,9 @@
 package org.apache.openwhisk.core.invoker
 
 
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.Calendar
+
 import akka.Done
 import akka.actor.{Actor, ActorSystem, Cancellable, CoordinatedShutdown, Props}
 import akka.stream.ActorMaterializer
@@ -37,7 +40,7 @@ import org.apache.openwhisk.spi.SpiLoader
 import org.apache.openwhisk.utils.ExecutionContextFactory
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await}
+import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
 case class CmdLineArgs(uniqueName: Option[String] = None, id: Option[Int] = None, displayedName: Option[String] = None)
@@ -167,7 +170,6 @@ object Invoker {
 
 
 
-    var lastActiveIPSetLocal = Set[String]() // storing the activeIPset in last second.
 
     case object WorkOnceNow
     case object ScheduledWork
@@ -179,6 +181,8 @@ object Invoker {
       implicit val ec = context.dispatcher
 
       var lastSchedule: Option[Cancellable] = None
+
+      var lastActiveIPSetLocal = Set[String]() // storing the activeIPset in last second.
 
       override def preStart() = {
         if (initialDelay != Duration.Zero) {
@@ -204,9 +208,9 @@ object Invoker {
           val myinvokerInstance =
             InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
 
-//          val path = Paths.get("/addrMap/addrMapLocal.txt")
-//                Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//          Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n")getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+          val path = Paths.get("/addrMap/addrMapLocal.txt")
+                Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+          Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n")getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
 
           producer.send("health", PingMessage(myinvokerInstance)).andThen {
@@ -227,9 +231,9 @@ object Invoker {
             val myinvokerInstance =
               InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
 
-//            val path = Paths.get("/addrMap/addrMapLocal.txt")
-//                  Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//              Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+            val path = Paths.get("/addrMap/addrMapLocal.txt")
+                  Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+              Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
 
             producer.send("health", PingMessage(myinvokerInstance)).andThen {

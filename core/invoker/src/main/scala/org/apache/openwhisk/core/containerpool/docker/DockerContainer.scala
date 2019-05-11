@@ -303,6 +303,7 @@ class DockerContainer(protected val id: ContainerId,
     if(path == "/run")  {DockerContainer.addIP(addrOverlay.host)}
 
 //    Files.write(Paths.get("/addrMap/testCalled.txt"), ("callContainer: Why this function is not called \n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    Files.write(Paths.get("/addrMap/testJsObject.txt"), (JsObject.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
 
     http

@@ -19,7 +19,8 @@ package org.apache.openwhisk.core.invoker
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.Calendar
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, ActorSystem, Props}
 import akka.event.Logging.InfoLevel
@@ -61,8 +62,8 @@ class updateActiveIPSetActor extends Actor {
       activeIPSet ++= newIPs
 
       val path = Paths.get("/addrMap/addrMap.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-      Files.write(path, ((activeIPSet - "").mkString("&") + "\n").getBytes())
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//      Files.write(path, ((activeIPSet - "").mkString("&") + "\n").getBytes())
 
     }
   }
