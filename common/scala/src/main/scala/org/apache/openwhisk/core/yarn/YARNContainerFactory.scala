@@ -140,13 +140,13 @@ class YARNContainerFactory(actorSystem: ActorSystem,
   }
 
   // temporary solution for DockerContainerFactor compiling
-  private var activeIPset = Set[String]()
-  override def addIP(ip: String): Unit = {
-    activeIPset += ip
+  private var activeIPset = Set[IDIPpair]()
+  override def addIP(idip: IDIPpair): Unit = {
+    activeIPset += idip
     Future.successful(())
   }
-  override def rmIP(ip: String): Unit = {
-    activeIPset -= ip
+  override def rmIP(idip: IDIPpair): Unit = {
+    activeIPset -= idip
     Future.successful(())
   }
 
@@ -156,7 +156,7 @@ class YARNContainerFactory(actorSystem: ActorSystem,
     Future.successful(())
   }
 
-  override def getAddrMap(): Set[String] = {
+  override def getAddrMap(): Set[IDIPpair] = {
     activeIPset
   }
 

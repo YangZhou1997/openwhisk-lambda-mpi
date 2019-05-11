@@ -28,7 +28,6 @@ import akka.util.Timeout
 import akka.stream._
 import akka.pattern.ask
 import akka.stream.scaladsl.Framing.FramingException
-import spray.json._
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -48,19 +47,26 @@ import org.apache.openwhisk.http.Messages
 import org.apache.openwhisk.utils.ExecutionContextFactory
 
 
-case class addIPMsg(ip: String)
-case class rmIPMsg(ip: String)
+////this id will be set to "temporary" during container creating
+////then gets filled during function instance invoking.
+//case class IDIPpair(var id: String, ip: String)
+//{
+//  override def toString(): String = {id + "=" + ip}
+//}
+case class addIPMsg(idip: IDIPpair)
+case class rmIPMsg(idip: IDIPpair)
+
 
 class updateActiveIPSetLocalActor extends Actor {
 
-  var activeIPset = Set[String]()
+  var activeIPset = Set[IDIPpair]()
 
   def receive: Receive = {
-    case addIPMsg(ip) => {
-      activeIPset += ip
+    case addIPMsg(idip) => {
+      activeIPset += idip
     }
-    case rmIPMsg(ip) =>{
-      activeIPset -= ip
+    case rmIPMsg(idip) =>{
+      activeIPset -= idip
     }
     case "writeAddrMapMsg" =>{
       val path = Paths.get("/addrMap/test-WriteAddrMap-DockerContainer.txt")
@@ -82,12 +88,12 @@ object DockerContainer {
 
   var bossUpdateActiveLocalIPSetActor: ActorRef = actorSystem.actorOf(Props(new updateActiveIPSetLocalActor))
 
-  def addIP(ip: String): Future[Unit] = {
-    bossUpdateActiveLocalIPSetActor ! addIPMsg(ip)
+  def addIP(idip: IDIPpair): Future[Unit] = {
+    bossUpdateActiveLocalIPSetActor ! addIPMsg(idip)
     Future.successful(())
   }
-  def rmIP(ip: String): Future[Unit] = {
-    bossUpdateActiveLocalIPSetActor ! rmIPMsg(ip)
+  def rmIP(idip: IDIPpair): Future[Unit] = {
+    bossUpdateActiveLocalIPSetActor ! rmIPMsg(idip)
     Future.successful(())
   }
 
@@ -96,11 +102,11 @@ object DockerContainer {
     Future.successful(())
   }
 
-  def getAddrMap(): Set[String] = {
+  def getAddrMap(): Set[IDIPpair] = {
     bossUpdateActiveLocalIPSetActor ! "getAddrMapMsg"
     implicit val timeout = Timeout(Duration(1, TimeUnit.SECONDS))
     val future = bossUpdateActiveLocalIPSetActor ? "getAddrMapMsg"
-    var myActiveIPset: Set[String] = Await.result(future, timeout.duration).asInstanceOf[Set[String]]
+    var myActiveIPset: Set[IDIPpair] = Await.result(future, timeout.duration).asInstanceOf[Set[IDIPpair]]
     myActiveIPset
   }
 
@@ -213,7 +219,7 @@ object DockerContainer {
 //      ip(1): overlay ip, used for functions talking with each other.
 //      _ <- addIP(ip(1).host)
 //      _ <- writeAddrMap()
-    } yield new DockerContainer(id, ip(0), ip(1), useRunc)
+    } yield new DockerContainer(id, ip(0), IDIPpair("temporary", ip(1).host), useRunc)
   }
 }
 
@@ -226,11 +232,11 @@ object DockerContainer {
  * @constructor
  * @param id the id of the container
  * @param addr the bridge network ip of the container
- * @param addrOverlay the overlay network ip of the container
+ * @param idip the instanceID and overlay network ip of the container
 */
 class DockerContainer(protected val id: ContainerId,
                       protected val addr: ContainerAddress,
-                      protected val addrOverlay: ContainerAddress, // just for making testing code happy
+                      protected var idip: IDIPpair, // just for making testing code happy
                       protected val useRunc: Boolean)(implicit docker: DockerApiWithFileAccess,
                                                       runc: RuncApi,
                                                       override protected val as: ActorSystem,
@@ -247,18 +253,17 @@ class DockerContainer(protected val id: ContainerId,
 
   override def suspend()(implicit transid: TransactionId): Future[Unit] = {
     super.suspend().flatMap(_ => {
-      DockerContainer.rmIP(addrOverlay.host)
+      DockerContainer.rmIP(idip)
       if (useRunc) runc.pause(id) else docker.pause(id)
     })
   }
   override def resume()(implicit transid: TransactionId): Future[Unit] = {
-    DockerContainer.addIP(addrOverlay.host)
-//    Files.write(Paths.get("/addrMap/testCalled.txt"), ("resume: Why this function is not called \n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    DockerContainer.addIP(idip)
     (if (useRunc) { runc.resume(id) } else { docker.unpause(id) }).flatMap(_ => super.resume())
   }
   override def destroy()(implicit transid: TransactionId): Future[Unit] = {
     super.destroy()
-    DockerContainer.rmIP(addrOverlay.host)
+    DockerContainer.rmIP(idip)
     docker.rm(id)
   }
 
@@ -300,10 +305,14 @@ class DockerContainer(protected val id: ContainerId,
       httpConnection = Some(conn)
       conn
     }
-    if(path == "/run")  {DockerContainer.addIP(addrOverlay.host)}
+    if(path == "/run") {
+      val instanceID: String = body.fields("value").asJsObject().fields.getOrElse("instanceID", "\"None\"").toString().drop(1).dropRight(1)
+      idip.id = instanceID
+      DockerContainer.addIP(idip)
+    }
 
 //    Files.write(Paths.get("/addrMap/testCalled.txt"), ("callContainer: Why this function is not called \n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-    Files.write(Paths.get("/addrMap/testJsObject.txt"), (JsObject.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    Files.write(Paths.get("/addrMap/testJsObject.txt"), (body.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
 
     http

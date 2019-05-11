@@ -92,3 +92,28 @@ cd openwhisk/ansible
 ```
 
 
+# Functionality Supported
+
+Users specify function instance ID using ```-p instanceID name0``` during invoking time, 
+while our **Directory Service** will let each function instance know the IP addresses and survival status of its peer instances during runtime. 
+
+User creats function: 
+```
+wsk -i action update --docker yangzhou1997/python3action:mpi fib ~/openwhisk/functions/test-random/fib.py
+```
+User invokes function instances:
+```
+wsk -i action invoke fib -p number 39 -p instanceID myname0
+wsk -i action invoke fib -p number 39 -p instanceID myname1
+wsk -i action invoke fib -p number 39 -p instanceID myname2
+wsk -i action invoke fib -p number 39 -p instanceID myname3
+```
+
+You should be able to see the ```~/openwhisk/addrMap/addrMap.txt``` during function instance runtime as follows: 
+```
+myname0=10.0.0.184&myname1=10.0.0.185&myname2=10.0.0.129&myname3=10.0.0.112
+```
+
+The appearence of ```instanceID=IP``` means that function instance is still alive. 
+Note that we have set the default synchronization time interval to 1s. 
+Thus, out Directory Service cannot provide any IP whose corresponding container lives for less than 1s. 

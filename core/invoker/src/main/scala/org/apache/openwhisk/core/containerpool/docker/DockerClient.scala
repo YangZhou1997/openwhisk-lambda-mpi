@@ -241,14 +241,6 @@ trait DockerApi {
   def run(image: String, args: Seq[String] = Seq.empty[String])(implicit transid: TransactionId): Future[ContainerId]
 
   /**
-    * update the current IPs into the /addrMap shared files.
-    *
-    * @param ip the ip of the container
-    * @return a Future completing according to the command's exit-code
-    */
-//  def updateAddrMap(ip: String)(implicit transid: TransactionId): Future[Unit]
-
-  /**
     * Connects the container with the given id to the bridge network.
     *
     * @param id the id of the container to connect

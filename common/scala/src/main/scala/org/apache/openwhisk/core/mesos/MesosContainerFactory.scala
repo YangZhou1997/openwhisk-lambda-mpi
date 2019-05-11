@@ -51,6 +51,7 @@ import org.apache.openwhisk.core.entity.ExecManifest
 import org.apache.openwhisk.core.entity.InvokerInstanceId
 import org.apache.openwhisk.core.entity.UUID
 
+
 /**
  * Configuration for mesos timeouts
  */
@@ -192,13 +193,13 @@ class MesosContainerFactory(config: WhiskConfig,
   }
 
   // temporary solution for DockerContainerFactor compiling: need to go deeper into MesosTask
-  private var activeIPset = Set[String]()
-  override def addIP(ip: String): Unit = {
-    activeIPset += ip
+  private var activeIPset = Set[IDIPpair]()
+  override def addIP(idip: IDIPpair): Unit = {
+    activeIPset += idip
     Future.successful(())
   }
-  override def rmIP(ip: String): Unit = {
-    activeIPset -= ip
+  override def rmIP(idip: IDIPpair): Unit = {
+    activeIPset -= idip
     Future.successful(())
   }
 
@@ -208,7 +209,7 @@ class MesosContainerFactory(config: WhiskConfig,
     Future.successful(())
   }
 
-  override def getAddrMap(): Set[String] = {
+  override def getAddrMap(): Set[IDIPpair] = {
     activeIPset
   }
 }

@@ -25,6 +25,13 @@ import org.apache.openwhisk.spi.Spi
 
 import scala.concurrent.Future
 
+//this id will be set to "temporary" during container creating
+//then gets filled during function instance invoking.
+case class IDIPpair(var id: String, ip: String)
+{
+  override def toString(): String = {id + "=" + ip}
+}
+
 case class ContainerArgsConfig(network: String,
                                dnsServers: Seq[String] = Seq.empty,
                                dnsSearch: Seq[String] = Seq.empty,
@@ -90,16 +97,16 @@ trait ContainerFactory {
   def cleanup(): Unit
 
   /** add an IP address to activeIPset **/
-  def addIP(ip: String): Unit
+  def addIP(idip: IDIPpair): Unit
 
   /** rm an IP address to activeIPset **/
-  def rmIP(ip: String): Unit
+  def rmIP(idip: IDIPpair): Unit
 
   /** write activeIPset into /addrMap **/
   def writeAddrMap(): Unit
 
   /** return addrMap set **/
-  def getAddrMap(): Set[String]
+  def getAddrMap(): Set[IDIPpair]
 }
 
 object ContainerFactory {

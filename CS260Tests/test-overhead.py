@@ -37,7 +37,7 @@ class wsk_fib:
     def start_function_instance(self, work_id):
         random_func = self.funcName[random.randint(0,len(self.funcName) - 1)]
 
-        returned_value = subprocess.check_output("wsk -i action invoke %s -p number %d" % (random_func, self.fib_para), shell=True)
+        returned_value = subprocess.check_output("wsk -i action invoke %s -p number %d -p instanceID %s" % (random_func, self.fib_para, ''.join(random.sample(string.ascii_letters + string.digits, 8))), shell=True)
 
         # ok: invoked /_/fib with id 046616d8795d43eaa616d8795db3ea95
         activationID = returned_value.decode("utf-8").split(' ')[5].rstrip()
@@ -56,7 +56,7 @@ class wsk_fib:
             returned_value = subprocess.check_output("wsk -i activation get %s | sed '1d'" % (self.fib_id[i]), shell=True)
             results = json.loads(returned_value.decode("utf-8"))
             self.fib_log[i] = results
-            print(results)
+            # print(results)
 
 
 if __name__ == "__main__":

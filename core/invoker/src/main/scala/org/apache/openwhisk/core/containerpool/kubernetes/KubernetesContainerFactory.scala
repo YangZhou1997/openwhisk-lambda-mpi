@@ -28,11 +28,12 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import org.apache.openwhisk.common.Logging
 import org.apache.openwhisk.common.TransactionId
-import org.apache.openwhisk.core.containerpool.{Container, ContainerFactory, ContainerFactoryProvider, RuntimesRegistryConfig}
+import org.apache.openwhisk.core.containerpool.{Container, ContainerFactory, ContainerFactoryProvider, IDIPpair, RuntimesRegistryConfig}
 import org.apache.openwhisk.core.entity.ByteSize
 import org.apache.openwhisk.core.entity.ExecManifest.ImageName
 import org.apache.openwhisk.core.entity.InvokerInstanceId
 import org.apache.openwhisk.core.{ConfigKeys, WhiskConfig}
+
 
 class KubernetesContainerFactory(
   label: String,
@@ -85,13 +86,13 @@ class KubernetesContainerFactory(
 
 
   // temporary solution for DockerContainerFactor compiling: need to go into KubernetesContainer
-  private var activeIPset = Set[String]()
-  override def addIP(ip: String): Unit = {
-    activeIPset += ip
+  private var activeIPset = Set[IDIPpair]()
+  override def addIP(idip: IDIPpair): Unit = {
+    activeIPset += idip
     Future.successful(())
   }
-  override def rmIP(ip: String): Unit = {
-    activeIPset -= ip
+  override def rmIP(idip: IDIPpair): Unit = {
+    activeIPset -= idip
     Future.successful(())
   }
 
@@ -100,7 +101,7 @@ class KubernetesContainerFactory(
     Files.write(path, activeIPset.mkString("&").getBytes())
     Future.successful(())
   }
-  override def getAddrMap(): Set[String] = {
+  override def getAddrMap(): Set[IDIPpair] = {
     activeIPset
   }
 }

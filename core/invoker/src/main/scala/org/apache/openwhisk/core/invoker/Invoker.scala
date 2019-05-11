@@ -33,6 +33,7 @@ import org.apache.openwhisk.core.{ConfigKeys, WhiskConfig}
 import org.apache.openwhisk.core.WhiskConfig._
 import org.apache.openwhisk.core.connector.{MessagingProvider, PingMessage}
 import org.apache.openwhisk.core.containerpool.ContainerPoolConfig
+import org.apache.openwhisk.core.containerpool.IDIPpair
 import org.apache.openwhisk.core.entity.{ActivationEntityLimit, ExecManifest, InvokerInstanceId}
 import org.apache.openwhisk.core.entity.size._
 import org.apache.openwhisk.http.{BasicHttpService, BasicRasService}
@@ -182,7 +183,7 @@ object Invoker {
 
       var lastSchedule: Option[Cancellable] = None
 
-      var lastActiveIPSetLocal = Set[String]() // storing the activeIPset in last second.
+      var lastActiveIPSetLocal = Set[IDIPpair]() // storing the activeIPset in last second.
 
       override def preStart() = {
         if (initialDelay != Duration.Zero) {
@@ -201,8 +202,8 @@ object Invoker {
           var activeIPSetLocal = invoker.getAddrMap()
           //      invoker.writeAddrMap()
 
-          val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal - ""
-          val newIPs = activeIPSetLocal diff lastActiveIPSetLocal - ""
+          val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
+          val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
           lastActiveIPSetLocal = activeIPSetLocal // copy activeIPset to lastActiveIPset
 
           val myinvokerInstance =

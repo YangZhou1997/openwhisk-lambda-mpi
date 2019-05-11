@@ -89,12 +89,12 @@ class DockerContainerFactory(instance: InvokerInstanceId,
     }
   }
 
-  override def addIP(ip: String): Unit = {DockerContainer.addIP(ip)}
-  override def rmIP(ip: String): Unit = {DockerContainer.rmIP(ip)}
+  override def addIP(idip: IDIPpair): Unit = {DockerContainer.addIP(idip)}
+  override def rmIP(idip: IDIPpair): Unit = {DockerContainer.rmIP(idip)}
 
   override def writeAddrMap(): Unit = {DockerContainer.writeAddrMap()}
 
-  override def getAddrMap(): Set[String] = {DockerContainer.getAddrMap()}
+  override def getAddrMap(): Set[IDIPpair] = {DockerContainer.getAddrMap()}
   /**
    * Removes all wsk_ containers - regardless of their state
    *

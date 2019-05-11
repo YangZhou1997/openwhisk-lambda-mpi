@@ -28,6 +28,7 @@ import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.util.Try
 
+
 sealed trait WorkerState
 case object Busy extends WorkerState
 case object Free extends WorkerState

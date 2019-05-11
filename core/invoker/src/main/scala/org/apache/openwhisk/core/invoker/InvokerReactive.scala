@@ -32,6 +32,7 @@ import org.apache.openwhisk.common.tracing.WhiskTracerProvider
 import org.apache.openwhisk.common._
 import org.apache.openwhisk.core.connector._
 import org.apache.openwhisk.core.containerpool._
+import org.apache.openwhisk.core.containerpool.IDIPpair
 import org.apache.openwhisk.core.containerpool.logging.LogStoreProvider
 import org.apache.openwhisk.core.database._
 import org.apache.openwhisk.core.entity._
@@ -50,19 +51,29 @@ import scala.util.{Failure, Success}
 case class updateActiveIPSetPM(p: PingMessage)
 class updateActiveIPSetActor extends Actor {
 
-  var lastActiveIPSet: Set[String] = Set()
-  var activeIPSet: Set[String] = Set()
+  var lastActiveIPSet: Set[IDIPpair] = Set()
+  var activeIPSet: Set[IDIPpair] = Set()
 
   def receive: Receive = {
     case updateActiveIPSetPM(p) => {
-      val rmIPs: Set[String] = p.instance.rmIPs.split("&").toSet - ""
-      val newIPs: Set[String] = p.instance.newIPs.split("&").toSet - ""
+      val rmIPs: Set[IDIPpair] = p.instance.rmIPs.split("&").filter(_ != "").map{
+        idip: String => {
+          val temp: Array[String] = idip.split("=")
+          IDIPpair(temp(0), temp(1))
+        }
+      }.toSet
+      val newIPs: Set[IDIPpair] = p.instance.newIPs.split("&").filter(_ != "").map{
+        idip: String => {
+          val temp: Array[String] = idip.split("=")
+          IDIPpair(temp(0), temp(1))
+        }
+      }.toSet
       lastActiveIPSet = activeIPSet
       activeIPSet --= rmIPs
       activeIPSet ++= newIPs
 
       val path = Paths.get("/addrMap/addrMap.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + (activeIPSet - "").mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSet.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 //      Files.write(path, ((activeIPSet - "").mkString("&") + "\n").getBytes())
 
     }
@@ -232,7 +243,7 @@ class InvokerReactive(
   private val pool =
     actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, activationFeed, prewarmingConfigs))
 
-  def getAddrMap(): Set[String] = {
+  def getAddrMap(): Set[IDIPpair] = {
     containerFactory.getAddrMap()
   }
 

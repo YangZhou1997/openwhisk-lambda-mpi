@@ -35,6 +35,7 @@ import akka.pattern.pipe
 import akka.util.Timeout
 import org.apache.openwhisk.common._
 import org.apache.openwhisk.core.connector._
+import org.apache.openwhisk.core.containerpool.IDIPpair
 import org.apache.openwhisk.core.database.NoDocumentException
 import org.apache.openwhisk.core.entitlement.Privilege
 import org.apache.openwhisk.core.entity.ActivationId.ActivationIdGenerator
@@ -124,9 +125,9 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
   var status = IndexedSeq[InvokerHealth]()
 
 
-  var activeIPSet: Set[String] = Set()
-  var rmIPs: Set[String] = Set()
-  var newIPs: Set[String] = Set()
+  var activeIPSet: Set[IDIPpair] = Set()
+  var rmIPs: Set[IDIPpair] = Set()
+  var newIPs: Set[IDIPpair] = Set()
   var syncThreshold: Int = 0
 
   def receive: Receive = {
@@ -147,8 +148,18 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
       var path = Paths.get("/addrMap/pingmsg.txt")
       Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + p.instance.rmIPs + "; newIPs: " + p.instance.newIPs + "; syncThreshold=" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-      rmIPs ++= p.instance.rmIPs.split("&").toSet - ""
-      newIPs ++= p.instance.newIPs.split("&").toSet - ""
+      rmIPs ++= p.instance.rmIPs.split("&").filter(_ != "").map{
+        idip: String => {
+          val temp: Array[String] = idip.split("=")
+          IDIPpair(temp(0), temp(1))
+        }
+      }.toSet
+      newIPs ++= p.instance.newIPs.split("&").filter(_ != "").map{
+        idip: String => {
+          val temp: Array[String] = idip.split("=")
+          IDIPpair(temp(0), temp(1))
+        }
+      }.toSet
 
       syncThreshold += 1
       if(syncThreshold >= 4){
@@ -168,8 +179,8 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
           syncThreshold = 0
 //          activeIPSet --= rmIPs
 //          activeIPSet ++= newIPs
-          rmIPs = Set[String]()
-          newIPs = Set[String]()
+          rmIPs = Set[IDIPpair]()
+          newIPs = Set[IDIPpair]()
         }
       }
 
