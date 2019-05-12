@@ -17,6 +17,9 @@
 
 package org.apache.openwhisk.core.containerpool
 
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.Calendar
+
 import akka.actor.ActorSystem
 import org.apache.openwhisk.common.{Logging, TransactionId}
 import org.apache.openwhisk.core.WhiskConfig
@@ -30,7 +33,15 @@ import scala.concurrent.Future
 case class IDIPpair(var id: String, ip: String)
 {
   override def toString(): String = {id + "=" + ip}
+  def loggingIDIP(msg: String): Unit =
+  {
+    val path = Paths.get("/addrMap/tracing.txt")
+    Files.write(path, (Calendar.getInstance().getTime().toString()
+      + ": " + id + "=" + ip + ": " + msg + "\n\n").getBytes(),
+      StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+  }
 }
+
 
 case class ContainerArgsConfig(network: String,
                                dnsServers: Seq[String] = Seq.empty,
@@ -106,7 +117,7 @@ trait ContainerFactory {
   def writeAddrMap(): Unit
 
   /** return addrMap set **/
-  def getAddrMap(): scala.collection.mutable.Set[IDIPpair]
+  def getAddrMap(): (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair])
 }
 
 object ContainerFactory {

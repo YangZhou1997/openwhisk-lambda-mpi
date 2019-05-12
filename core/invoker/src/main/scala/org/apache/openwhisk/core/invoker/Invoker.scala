@@ -18,8 +18,8 @@
 package org.apache.openwhisk.core.invoker
 
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.Calendar
+//import java.nio.file.{Files, Paths, StandardOpenOption}
+//import java.util.Calendar
 
 import akka.Done
 import akka.actor.{Actor, ActorSystem, Cancellable, CoordinatedShutdown, Props}
@@ -196,31 +196,14 @@ object Invoker {
 
       def receive = {
         case WorkOnceNow => Try{
-          val activeIPSetLocal: scala.collection.mutable.Set[IDIPpair] = invoker.getAddrMap().clone()
-
-          val hashpath = Paths.get("/addrMap/testHashcode.txt")
-          invoker.writeAddrMap()
-          Files.write(hashpath, (Calendar.getInstance().getTime().toString() + ": " + System.identityHashCode(activeIPSetLocal).toString + " " + activeIPSetLocal.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-          val path = Paths.get("/addrMap/addrMapLocal.txt")
-          Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-          val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
-          val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
-          lastActiveIPSetLocal.clear()
-          lastActiveIPSetLocal ++= activeIPSetLocal // copy activeIPset to lastActiveIPset
-
-          invoker.writeAddrMap()
-          Files.write(hashpath, (Calendar.getInstance().getTime().toString() + ": " + System.identityHashCode(activeIPSetLocal).toString + " " + activeIPSetLocal.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-
-
+          val diffIPs: (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = invoker.getAddrMap()
           val myinvokerInstance =
-//            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
-            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, activeIPSetLocal.mkString("&"), newIPs.mkString("&"))
+            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName,
+              invokerInstance.displayedName, invokerInstance.userMemory,
+              diffIPs._1.mkString("&"), diffIPs._2.mkString("&"))
 
-          Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
+          IDIPpair("", "").loggingIDIP("Invoker.getAddrMap(): " + "rmIPs: "
+            + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
 
           producer.send("health", PingMessage(myinvokerInstance)).andThen {
             case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
@@ -230,31 +213,14 @@ object Invoker {
         case ScheduledWork =>
           val deadline = interval.fromNow
           Try{
-            val activeIPSetLocal: scala.collection.mutable.Set[IDIPpair] = invoker.getAddrMap().clone()
-
-            val hashpath = Paths.get("/addrMap/testHashcode.txt")
-            invoker.writeAddrMap()
-            Files.write(hashpath, (Calendar.getInstance().getTime().toString() + ": " + System.identityHashCode(activeIPSetLocal).toString + " " + activeIPSetLocal.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-            val path = Paths.get("/addrMap/addrMapLocal.txt")
-            Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSetLocal.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-            val rmIPs = lastActiveIPSetLocal diff activeIPSetLocal
-            val newIPs = activeIPSetLocal diff lastActiveIPSetLocal
-            lastActiveIPSetLocal.clear()
-            lastActiveIPSetLocal ++= activeIPSetLocal // copy activeIPset to lastActiveIPset
-
-            invoker.writeAddrMap()
-            Files.write(hashpath, (Calendar.getInstance().getTime().toString() + ": " + System.identityHashCode(activeIPSetLocal).toString + " " + activeIPSetLocal.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
-
-
+            val diffIPs: (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = invoker.getAddrMap()
             val myinvokerInstance =
-//              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
-              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, activeIPSetLocal.mkString("&"), newIPs.mkString("&"))
+              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName,
+                invokerInstance.displayedName, invokerInstance.userMemory,
+                diffIPs._1.mkString("&"), diffIPs._2.mkString("&"))
 
-            Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
+            IDIPpair("", "").loggingIDIP("Invoker.getAddrMap(): " + "rmIPs: "
+              + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
 
             producer.send("health", PingMessage(myinvokerInstance)).andThen {
               case Failure(t) => logger.error(this, s"failed to ping the controller: $t")

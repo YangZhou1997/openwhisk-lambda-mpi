@@ -209,8 +209,8 @@ class MesosContainerFactory(config: WhiskConfig,
     Future.successful(())
   }
 
-  override def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
-    activeIPset
+  override def getAddrMap(): (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = {
+    (activeIPset, activeIPset)
   }
 }
 object MesosContainerFactory {

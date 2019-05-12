@@ -70,13 +70,15 @@ class updateActiveIPSetActor extends Actor {
       }.toSet
       lastActiveIPSet.clear()
       lastActiveIPSet ++= activeIPSet
-      activeIPSet --= rmIPs
       activeIPSet ++= newIPs
+      activeIPSet --= rmIPs
 
       val path = Paths.get("/addrMap/addrMap.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + rmIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//      Files.write(path, ((activeIPSet - "").mkString("&") + "\n").getBytes())
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": "
+        + activeIPSet.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
+      IDIPpair("", "").loggingIDIP("InvokerReactive.processAddrMapMessage(): " + "rmIPs: "
+        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
     }
   }
 }
@@ -244,8 +246,11 @@ class InvokerReactive(
   private val pool =
     actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, activationFeed, prewarmingConfigs))
 
-  def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
-    containerFactory.getAddrMap()
+  def getAddrMap(): (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = {
+    val temp = containerFactory.getAddrMap()
+    IDIPpair("", "").loggingIDIP("InvokerReactive.getAddrMap(): " + "rmIPs: "
+      + temp._1.mkString("&") + "; newIPs: " + temp._2.mkString("&"))
+    temp
   }
 
   def writeAddrMap(): Unit = {

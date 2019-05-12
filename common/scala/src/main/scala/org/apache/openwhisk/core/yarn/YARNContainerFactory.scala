@@ -156,8 +156,8 @@ class YARNContainerFactory(actorSystem: ActorSystem,
     Future.successful(())
   }
 
-  override def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
-    activeIPset
+  override def getAddrMap(): (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = {
+    (activeIPset, activeIPset)
   }
 
   def createService(): Unit = {
