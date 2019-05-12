@@ -86,3 +86,17 @@ intellij-run-config.groovy
 
 # VSCode
 .vscode/
+
+# ctags
+tags
+
+# python virtualenv
+virtualenv/
+
+*.dat
+
+teragen
+*ipaddr
+core
+*.txt
+venv/

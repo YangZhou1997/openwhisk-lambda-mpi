@@ -58,7 +58,7 @@ controller.host.basePort={{ controller.basePort }}
 controller.instances={{ controller.instances }}
 controller.protocol={{ controller.protocol }}
 
-invoker.container.network=bridge
+invoker.container.network=openwhiskOverlay
 invoker.container.policy={{ invoker_container_policy_name | default()}}
 invoker.container.dns={{ invoker_container_network_dns_servers | default()}}
 invoker.useRunc={{ invoker.useRunc }}
