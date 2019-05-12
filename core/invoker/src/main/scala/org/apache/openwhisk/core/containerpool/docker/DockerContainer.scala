@@ -17,9 +17,9 @@
 
 package org.apache.openwhisk.core.containerpool.docker
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
+//import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.Instant
-import java.util.Calendar
+//import java.util.Calendar
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
@@ -58,68 +58,38 @@ case class addIPMsg(idip: IDIPpair)
 case class rmIPMsg(idip: IDIPpair)
 
 
-//class updateActiveIPSetLocalActor extends Actor {
-//
-//  val activeIPset: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
-//  val lastActiveIPset: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
-//
-//  def receive: Receive = {
-//    case addIPMsg(idip) => {
-//      activeIPset += idip
-//      val path = Paths.get("/addrMap/testRmIP.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": add" + System.identityHashCode(activeIPset).toString + " " + idip.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//    }
-//    case rmIPMsg(idip) =>{
-//      activeIPset -= idip
-//      val path = Paths.get("/addrMap/testRmIP.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": rm" + System.identityHashCode(activeIPset).toString + " " + idip.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//    }
-//    case "writeAddrMapMsg" =>{
-//      val path = Paths.get("/addrMap/testHashcode.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + System.identityHashCode(activeIPset).toString + " " + activeIPset.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//    }
-//    case "getAddrMapMsg" =>{
-//      val rmIPs = lastActiveIPset diff activeIPset
-//      val newIPs = activeIPset diff lastActiveIPset
-//      lastActiveIPset.clear()
-//      lastActiveIPset ++= activeIPset
-//      val path = Paths.get("/addrMap/testHashcode.txt")
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": updateActiveIPSetLocalActor" + System.identityHashCode(activeIPset).toString + " " + rmIPs.toString() + " " + newIPs.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": updateActiveIPSetLocalActor" + System.identityHashCode(activeIPset).toString + " " + activeIPset.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-//
-//      sender ! (rmIPs.clone(), newIPs.clone())
-//    }
-//  }
-//}
-
-
 class updateActiveIPSetLocalActor extends Actor {
 
-  val rmIPs: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
-  val newIPs: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
+  val activeIPset: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
+  val lastActiveIPset: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
 
   def receive: Receive = {
     case addIPMsg(idip) => {
-      newIPs += idip
-      idip.loggingIDIP("DockerContainer.addIPMsg(): " + "rmIPs: "
-        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
+      activeIPset += idip
+      idip.loggingIDIP("DockerContainer.addIPMsg(): " + "activeIPset: "
+        + activeIPset.mkString("&"))
     }
     case rmIPMsg(idip) =>{
-      rmIPs += idip
-      idip.loggingIDIP("DockerContainer.rmIPMsg(): " + "rmIPs: "
-        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
+      activeIPset -= idip
+      idip.loggingIDIP("DockerContainer.rmIPMsg(): " + "activeIPset: "
+        + activeIPset.mkString("&"))
     }
     case "writeAddrMapMsg" =>{
-      val path = Paths.get("/addrMap/testHashcode.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + rmIPs.toString() + ": " + newIPs.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      IDIPpair("", "").loggingIDIP("DockerContainer.writeAddrMapMsg(): " + "activeIPset: "
+        + activeIPset.mkString("&"))
     }
     case "getAddrMapMsg" =>{
+      val rmIPs = lastActiveIPset diff activeIPset
+      val newIPs = activeIPset diff lastActiveIPset
+      lastActiveIPset.clear()
+      lastActiveIPset ++= activeIPset
       IDIPpair("", "").loggingIDIP("DockerContainer.getAddrMapMsg(): " + "rmIPs: "
         + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
       sender ! (rmIPs, newIPs)
     }
   }
 }
+
 
 object DockerContainer {
 
@@ -352,37 +322,35 @@ class DockerContainer(protected val id: ContainerId,
       conn
     }
 
-    val randomInt = scala.util.Random.nextInt(200000000)
-    val mypath = Paths.get("/addrMap/testResponse.txt")
+//    val randomInt = scala.util.Random.nextInt(200000000)
 
     if(path == "/run") {
       val instanceID: String = body.fields("value").asJsObject().fields.getOrElse("instanceID", "\"None\"").toString().drop(1).dropRight(1)
       idip = IDIPpair(instanceID, idip.ip)
 
       //      DockerContainer.addIP(idip)
-//      If you define case class IDIPpair(var id: String, ip: String)
-//      You cannot directly add idip: it purely adds a reference of idip to newIPs;
+//      If you define: case class IDIPpair(var id: String, ip: String),
+//      you cannot directly add idip: it purely adds a reference of idip to newIPs;
 //      if idip here will be changed afterward, the idip value in newIPs will change accordingly.
 //      That is why the warm start bug happens!!!
 
       DockerContainer.addIP(idip)
-      Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :1 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      idip.loggingIDIP("DockerContainer.callContainer.addIP(): ")
     }
 
-    Files.write(Paths.get("/addrMap/testJsObject.txt"), (body.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-
+//    Files.write(Paths.get("/addrMap/testJsObject.txt"), (body.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
     http
       .post(path, body, retry)
       .flatMap { response =>
         val finished = Instant.now()
-//        Files.write(Paths.get("/addrMap/testResponse.txt"), (response.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//      Files.write(Paths.get("/addrMap/testResponse.txt"), (response.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 //      Response normally: Right(ok)
 
         if(path == "/run")
         {
           DockerContainer.rmIP(idip)
-          Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :2 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+          idip.loggingIDIP("DockerContainer.callContainer.rmIP(): ")
         }
 
 
@@ -396,13 +364,11 @@ class DockerContainer(protected val id: ContainerId,
                 case false => error
               }
             case other => {
-              Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :3 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
               Future.successful(other)
             }
           }
           .fold(_.map(Left(_)), right => Future.successful(Right(right)))
           .map(res =>{
-            Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :4 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
             RunResult(Interval(started, finished), res)
           })
       }

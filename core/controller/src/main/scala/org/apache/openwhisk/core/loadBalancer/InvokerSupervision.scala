@@ -165,7 +165,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
       if(syncThreshold >= 4){
         syncThreshold = 4 // avoid int overflow
 
-//        if(rmIPs.size != 0 || newIPs.size != 0){
+        if(rmIPs.size != 0 || newIPs.size != 0){
 
           val myinvokerInstance =
             InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), rmIPs = rmIPs.mkString("&"), newIPs = newIPs.mkString("&"))
@@ -181,7 +181,7 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
 //          activeIPSet ++= newIPs
           rmIPs.clear()
           newIPs.clear()
-//        }
+        }
       }
 
 
