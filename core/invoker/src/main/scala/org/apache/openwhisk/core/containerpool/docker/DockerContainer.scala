@@ -357,13 +357,15 @@ class DockerContainer(protected val id: ContainerId,
 
     if(path == "/run") {
       val instanceID: String = body.fields("value").asJsObject().fields.getOrElse("instanceID", "\"None\"").toString().drop(1).dropRight(1)
-      idip.id = instanceID
-//      DockerContainer.addIP(idip)
+      idip = IDIPpair(instanceID, idip.ip)
+
+      //      DockerContainer.addIP(idip)
+//      If you define case class IDIPpair(var id: String, ip: String)
 //      You cannot directly add idip: it purely adds a reference of idip to newIPs;
 //      if idip here will be changed afterward, the idip value in newIPs will change accordingly.
 //      That is why the warm start bug happens!!!
 
-      DockerContainer.addIP(IDIPpair(idip.id, idip.ip))
+      DockerContainer.addIP(idip)
       Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :1 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     }
 

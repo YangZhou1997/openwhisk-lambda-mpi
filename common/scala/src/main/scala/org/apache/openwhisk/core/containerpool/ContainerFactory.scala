@@ -30,7 +30,7 @@ import scala.concurrent.Future
 
 //this id will be set to "temporary" during container creating
 //then gets filled during function instance invoking.
-case class IDIPpair(var id: String, ip: String)
+case class IDIPpair(val id: String, val ip: String)
 {
   override def toString(): String = {id + "=" + ip}
   def loggingIDIP(msg: String): Unit =
