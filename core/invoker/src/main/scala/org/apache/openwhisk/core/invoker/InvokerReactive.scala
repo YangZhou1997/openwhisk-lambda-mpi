@@ -74,7 +74,7 @@ class updateActiveIPSetActor extends Actor {
       activeIPSet ++= newIPs
 
       val path = Paths.get("/addrMap/addrMap.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + activeIPSet.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + rmIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 //      Files.write(path, ((activeIPSet - "").mkString("&") + "\n").getBytes())
 
     }

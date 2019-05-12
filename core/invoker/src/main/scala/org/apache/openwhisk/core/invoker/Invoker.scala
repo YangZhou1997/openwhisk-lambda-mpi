@@ -216,7 +216,8 @@ object Invoker {
 
 
           val myinvokerInstance =
-            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
+//            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
+            InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, activeIPSetLocal.mkString("&"), newIPs.mkString("&"))
 
           Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
@@ -249,7 +250,8 @@ object Invoker {
 
 
             val myinvokerInstance =
-              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
+//              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, rmIPs.mkString("&"), newIPs.mkString("&"))
+              InvokerInstanceId(invokerInstance.instance, invokerInstance.uniqueName, invokerInstance.displayedName, invokerInstance.userMemory, activeIPSetLocal.mkString("&"), newIPs.mkString("&"))
 
             Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
