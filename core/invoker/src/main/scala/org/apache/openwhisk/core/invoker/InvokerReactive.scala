@@ -19,8 +19,9 @@ package org.apache.openwhisk.core.invoker
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
-import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.Calendar
+import java.nio.file.{Files, Paths}
+//import java.nio.file.StandardOpenOption
+//import java.util.Calendar
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, ActorSystem, Props}
 import akka.event.Logging.InfoLevel
@@ -74,11 +75,14 @@ class updateActiveIPSetActor extends Actor {
       activeIPSet --= rmIPs
 
       val path = Paths.get("/addrMap/addrMap.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": "
-        + activeIPSet.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      Files.write(path, (activeIPSet.mkString("&") + "\n").getBytes())
 
-      IDIPpair("", "").loggingIDIP("InvokerReactive.processAddrMapMessage(): " + "rmIPs: "
-        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
+//      val path = Paths.get("/addrMap/addrMap.txt")
+//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": "
+//        + activeIPSet.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//
+//      IDIPpair("", "").loggingIDIP("InvokerReactive.processAddrMapMessage(): " + "rmIPs: "
+//        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
     }
   }
 }
@@ -248,8 +252,8 @@ class InvokerReactive(
 
   def getAddrMap(): (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = {
     val temp = containerFactory.getAddrMap()
-    IDIPpair("", "").loggingIDIP("InvokerReactive.getAddrMap(): " + "rmIPs: "
-      + temp._1.mkString("&") + "; newIPs: " + temp._2.mkString("&"))
+//    IDIPpair("", "").loggingIDIP("InvokerReactive.getAddrMap(): " + "rmIPs: "
+//      + temp._1.mkString("&") + "; newIPs: " + temp._2.mkString("&"))
     temp
   }
 

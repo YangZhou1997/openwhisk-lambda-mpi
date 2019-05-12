@@ -96,8 +96,8 @@ class DockerContainerFactory(instance: InvokerInstanceId,
 
   override def getAddrMap(): (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) = {
     val temp = DockerContainer.getAddrMap()
-    IDIPpair("", "").loggingIDIP("DockerContainerFactory.getAddrMap(): " + "rmIPs: "
-      + temp._1.mkString("&") + "; newIPs: " + temp._2.mkString("&"))
+//    IDIPpair("", "").loggingIDIP("DockerContainerFactory.getAddrMap(): " + "rmIPs: "
+//      + temp._1.mkString("&") + "; newIPs: " + temp._2.mkString("&"))
     temp
   }
   /**

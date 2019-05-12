@@ -18,8 +18,8 @@
 package org.apache.openwhisk.core.loadBalancer
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.Calendar
+//import java.nio.file.{Files, Paths, StandardOpenOption}
+//import java.util.Calendar
 
 import scala.collection.immutable
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -145,8 +145,8 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
 
 //    extract rmIPs and newIPs from pingmessage, and send back if there are numInvokers pingmessage accumulated and there is IPset changed.
 
-      var path = Paths.get("/addrMap/pingmsg.txt")
-      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + p.instance.rmIPs + "; newIPs: " + p.instance.newIPs + "; syncThreshold=" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//      var path = Paths.get("/addrMap/pingmsg.txt")
+//      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + p.instance.rmIPs + "; newIPs: " + p.instance.newIPs + "; syncThreshold=" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
       rmIPs ++= p.instance.rmIPs.split("&").filter(_ != "").map{
         idip: String => {
@@ -170,8 +170,8 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
           val myinvokerInstance =
             InvokerInstanceId(0, userMemory=ByteSize(0, SizeUnits.BYTE), rmIPs = rmIPs.mkString("&"), newIPs = newIPs.mkString("&"))
 
-        path = Paths.get("/addrMap/addrMapMsg.txt")
-        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " +  newIPs.mkString("&") + "; syncThreshold" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//        path = Paths.get("/addrMap/addrMapMsg.txt")
+//        Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + "rmIPs: " + rmIPs.mkString("&") + "; newIPs: " +  newIPs.mkString("&") + "; syncThreshold" + syncThreshold.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
           pingProducer.send("addrMap", PingMessage(myinvokerInstance)).andThen {
             case Failure(t) => logging.error(this, s"failed to ping the controller: $t")}

@@ -202,8 +202,8 @@ object Invoker {
               invokerInstance.displayedName, invokerInstance.userMemory,
               diffIPs._1.mkString("&"), diffIPs._2.mkString("&"))
 
-          IDIPpair("", "").loggingIDIP("Invoker.getAddrMap(): " + "rmIPs: "
-            + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
+//          IDIPpair("", "").loggingIDIP("Invoker.getAddrMap(): " + "rmIPs: "
+//            + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
 
           producer.send("health", PingMessage(myinvokerInstance)).andThen {
             case Failure(t) => logger.error(this, s"failed to ping the controller: $t")
@@ -219,8 +219,8 @@ object Invoker {
                 invokerInstance.displayedName, invokerInstance.userMemory,
                 diffIPs._1.mkString("&"), diffIPs._2.mkString("&"))
 
-            IDIPpair("", "").loggingIDIP("Invoker.getAddrMap(): " + "rmIPs: "
-              + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
+//            IDIPpair("", "").loggingIDIP("Invoker.getAddrMap(): " + "rmIPs: "
+//              + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
 
             producer.send("health", PingMessage(myinvokerInstance)).andThen {
               case Failure(t) => logger.error(this, s"failed to ping the controller: $t")

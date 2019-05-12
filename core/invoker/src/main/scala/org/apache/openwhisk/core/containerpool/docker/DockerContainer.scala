@@ -66,13 +66,13 @@ class updateActiveIPSetLocalActor extends Actor {
   def receive: Receive = {
     case addIPMsg(idip) => {
       activeIPset += idip
-      idip.loggingIDIP("DockerContainer.addIPMsg(): " + "activeIPset: "
-        + activeIPset.mkString("&"))
+//      idip.loggingIDIP("DockerContainer.addIPMsg(): " + "activeIPset: "
+//        + activeIPset.mkString("&"))
     }
     case rmIPMsg(idip) =>{
       activeIPset -= idip
-      idip.loggingIDIP("DockerContainer.rmIPMsg(): " + "activeIPset: "
-        + activeIPset.mkString("&"))
+//      idip.loggingIDIP("DockerContainer.rmIPMsg(): " + "activeIPset: "
+//        + activeIPset.mkString("&"))
     }
     case "writeAddrMapMsg" =>{
       IDIPpair("", "").loggingIDIP("DockerContainer.writeAddrMapMsg(): " + "activeIPset: "
@@ -83,8 +83,8 @@ class updateActiveIPSetLocalActor extends Actor {
       val newIPs = activeIPset diff lastActiveIPset
       lastActiveIPset.clear()
       lastActiveIPset ++= activeIPset
-      IDIPpair("", "").loggingIDIP("DockerContainer.getAddrMapMsg(): " + "rmIPs: "
-        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
+//      IDIPpair("", "").loggingIDIP("DockerContainer.getAddrMapMsg(): " + "rmIPs: "
+//        + rmIPs.mkString("&") + "; newIPs: " + newIPs.mkString("&"))
       sender ! (rmIPs, newIPs)
     }
   }
@@ -121,8 +121,8 @@ object DockerContainer {
     val future = bossUpdateActiveLocalIPSetActor ? "getAddrMapMsg"
     val diffIPs: (scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair]) =
       Await.result(future, timeout.duration).asInstanceOf[(scala.collection.mutable.Set[IDIPpair], scala.collection.mutable.Set[IDIPpair])]
-    IDIPpair("", "").loggingIDIP("DockerContainer.getAddrMap(): " + "rmIPs: "
-      + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
+//    IDIPpair("", "").loggingIDIP("DockerContainer.getAddrMap(): " + "rmIPs: "
+//      + diffIPs._1.mkString("&") + "; newIPs: " + diffIPs._2.mkString("&"))
     diffIPs
   }
 
@@ -335,7 +335,7 @@ class DockerContainer(protected val id: ContainerId,
 //      That is why the warm start bug happens!!!
 
       DockerContainer.addIP(idip)
-      idip.loggingIDIP("DockerContainer.callContainer.addIP(): ")
+//      idip.loggingIDIP("DockerContainer.callContainer.addIP(): ")
     }
 
 //    Files.write(Paths.get("/addrMap/testJsObject.txt"), (body.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
@@ -350,7 +350,7 @@ class DockerContainer(protected val id: ContainerId,
         if(path == "/run")
         {
           DockerContainer.rmIP(idip)
-          idip.loggingIDIP("DockerContainer.callContainer.rmIP(): ")
+//          idip.loggingIDIP("DockerContainer.callContainer.rmIP(): ")
         }
 
 
