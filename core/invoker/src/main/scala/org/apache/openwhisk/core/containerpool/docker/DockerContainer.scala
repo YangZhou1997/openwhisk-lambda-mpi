@@ -19,6 +19,7 @@ package org.apache.openwhisk.core.containerpool.docker
 
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.Instant
+import java.util.Calendar
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
@@ -59,7 +60,7 @@ case class rmIPMsg(idip: IDIPpair)
 
 class updateActiveIPSetLocalActor extends Actor {
 
-  var activeIPset = Set[IDIPpair]()
+  val activeIPset: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
 
   def receive: Receive = {
     case addIPMsg(idip) => {
@@ -69,8 +70,8 @@ class updateActiveIPSetLocalActor extends Actor {
       activeIPset -= idip
     }
     case "writeAddrMapMsg" =>{
-      val path = Paths.get("/addrMap/test-WriteAddrMap-DockerContainer.txt")
-      Files.write(path, (activeIPset.mkString("&") + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+      val path = Paths.get("/addrMap/testHashcode.txt")
+      Files.write(path, (Calendar.getInstance().getTime().toString() + ": " + System.identityHashCode(activeIPset).toString + " " + activeIPset.toString() + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     }
     case "getAddrMapMsg" =>{
       sender ! activeIPset
@@ -102,11 +103,11 @@ object DockerContainer {
     Future.successful(())
   }
 
-  def getAddrMap(): Set[IDIPpair] = {
+  def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
     bossUpdateActiveLocalIPSetActor ! "getAddrMapMsg"
     implicit val timeout = Timeout(Duration(1, TimeUnit.SECONDS))
     val future = bossUpdateActiveLocalIPSetActor ? "getAddrMapMsg"
-    var myActiveIPset: Set[IDIPpair] = Await.result(future, timeout.duration).asInstanceOf[Set[IDIPpair]]
+    val myActiveIPset: scala.collection.mutable.Set[IDIPpair] = Await.result(future, timeout.duration).asInstanceOf[scala.collection.mutable.Set[IDIPpair]]
     myActiveIPset
   }
 
@@ -253,17 +254,17 @@ class DockerContainer(protected val id: ContainerId,
 
   override def suspend()(implicit transid: TransactionId): Future[Unit] = {
     super.suspend().flatMap(_ => {
-      DockerContainer.rmIP(idip)
+//      DockerContainer.rmIP(idip)
       if (useRunc) runc.pause(id) else docker.pause(id)
     })
   }
   override def resume()(implicit transid: TransactionId): Future[Unit] = {
-    DockerContainer.addIP(idip)
+//    DockerContainer.addIP(idip)
     (if (useRunc) { runc.resume(id) } else { docker.unpause(id) }).flatMap(_ => super.resume())
   }
   override def destroy()(implicit transid: TransactionId): Future[Unit] = {
     super.destroy()
-    DockerContainer.rmIP(idip)
+//    DockerContainer.rmIP(idip)
     docker.rm(id)
   }
 
@@ -305,10 +306,15 @@ class DockerContainer(protected val id: ContainerId,
       httpConnection = Some(conn)
       conn
     }
+
+    val randomInt = scala.util.Random.nextInt(200000000)
+    val mypath = Paths.get("/addrMap/testResponse.txt")
+
     if(path == "/run") {
       val instanceID: String = body.fields("value").asJsObject().fields.getOrElse("instanceID", "\"None\"").toString().drop(1).dropRight(1)
       idip.id = instanceID
       DockerContainer.addIP(idip)
+      Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :1 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     }
 
 //    Files.write(Paths.get("/addrMap/testCalled.txt"), ("callContainer: Why this function is not called \n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
@@ -319,6 +325,15 @@ class DockerContainer(protected val id: ContainerId,
       .post(path, body, retry)
       .flatMap { response =>
         val finished = Instant.now()
+//        Files.write(Paths.get("/addrMap/testResponse.txt"), (response.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+//      Response normally: Right(ok)
+
+        if(path == "/run")
+        {
+          DockerContainer.rmIP(idip)
+          Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :2 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+        }
+
 
         response.left
           .map {
@@ -330,11 +345,15 @@ class DockerContainer(protected val id: ContainerId,
                 case false => error
               }
             case other => {
+              Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :3 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
               Future.successful(other)
             }
           }
           .fold(_.map(Left(_)), right => Future.successful(Right(right)))
-          .map(res => RunResult(Interval(started, finished), res))
+          .map(res =>{
+            Files.write(mypath, (Calendar.getInstance().getTime().toString() + path + " " + idip.toString() + " :4 :" + randomInt.toString + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+            RunResult(Interval(started, finished), res)
+          })
       }
   }
 

@@ -94,7 +94,7 @@ class DockerContainerFactory(instance: InvokerInstanceId,
 
   override def writeAddrMap(): Unit = {DockerContainer.writeAddrMap()}
 
-  override def getAddrMap(): Set[IDIPpair] = {DockerContainer.getAddrMap()}
+  override def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {DockerContainer.getAddrMap()}
   /**
    * Removes all wsk_ containers - regardless of their state
    *

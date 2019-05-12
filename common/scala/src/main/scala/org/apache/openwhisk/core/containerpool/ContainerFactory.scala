@@ -106,7 +106,7 @@ trait ContainerFactory {
   def writeAddrMap(): Unit
 
   /** return addrMap set **/
-  def getAddrMap(): Set[IDIPpair]
+  def getAddrMap(): scala.collection.mutable.Set[IDIPpair]
 }
 
 object ContainerFactory {

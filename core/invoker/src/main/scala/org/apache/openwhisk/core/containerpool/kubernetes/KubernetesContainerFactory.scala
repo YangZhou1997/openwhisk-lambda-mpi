@@ -86,7 +86,7 @@ class KubernetesContainerFactory(
 
 
   // temporary solution for DockerContainerFactor compiling: need to go into KubernetesContainer
-  private var activeIPset = Set[IDIPpair]()
+  private val activeIPset = scala.collection.mutable.Set[IDIPpair]()
   override def addIP(idip: IDIPpair): Unit = {
     activeIPset += idip
     Future.successful(())
@@ -101,7 +101,7 @@ class KubernetesContainerFactory(
     Files.write(path, activeIPset.mkString("&").getBytes())
     Future.successful(())
   }
-  override def getAddrMap(): Set[IDIPpair] = {
+  override def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
     activeIPset
   }
 }

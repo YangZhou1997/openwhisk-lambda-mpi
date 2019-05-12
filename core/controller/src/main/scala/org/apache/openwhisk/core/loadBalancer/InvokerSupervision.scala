@@ -125,9 +125,9 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
   var status = IndexedSeq[InvokerHealth]()
 
 
-  var activeIPSet: Set[IDIPpair] = Set()
-  var rmIPs: Set[IDIPpair] = Set()
-  var newIPs: Set[IDIPpair] = Set()
+  val activeIPSet: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
+  val rmIPs: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
+  val newIPs: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set[IDIPpair]()
   var syncThreshold: Int = 0
 
   def receive: Receive = {
@@ -179,8 +179,8 @@ class InvokerPool(childFactory: (ActorRefFactory, InvokerInstanceId) => ActorRef
           syncThreshold = 0
 //          activeIPSet --= rmIPs
 //          activeIPSet ++= newIPs
-          rmIPs = Set[IDIPpair]()
-          newIPs = Set[IDIPpair]()
+          rmIPs.clear()
+          newIPs.clear()
         }
       }
 

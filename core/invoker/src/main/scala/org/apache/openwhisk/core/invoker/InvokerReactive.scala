@@ -51,8 +51,8 @@ import scala.util.{Failure, Success}
 case class updateActiveIPSetPM(p: PingMessage)
 class updateActiveIPSetActor extends Actor {
 
-  var lastActiveIPSet: Set[IDIPpair] = Set()
-  var activeIPSet: Set[IDIPpair] = Set()
+  val lastActiveIPSet: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set()
+  val activeIPSet: scala.collection.mutable.Set[IDIPpair] = scala.collection.mutable.Set()
 
   def receive: Receive = {
     case updateActiveIPSetPM(p) => {
@@ -68,7 +68,8 @@ class updateActiveIPSetActor extends Actor {
           IDIPpair(temp(0), temp(1))
         }
       }.toSet
-      lastActiveIPSet = activeIPSet
+      lastActiveIPSet.clear()
+      lastActiveIPSet ++= activeIPSet
       activeIPSet --= rmIPs
       activeIPSet ++= newIPs
 
@@ -243,7 +244,7 @@ class InvokerReactive(
   private val pool =
     actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, activationFeed, prewarmingConfigs))
 
-  def getAddrMap(): Set[IDIPpair] = {
+  def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
     containerFactory.getAddrMap()
   }
 

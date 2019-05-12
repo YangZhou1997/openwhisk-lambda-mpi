@@ -193,7 +193,7 @@ class MesosContainerFactory(config: WhiskConfig,
   }
 
   // temporary solution for DockerContainerFactor compiling: need to go deeper into MesosTask
-  private var activeIPset = Set[IDIPpair]()
+  private val activeIPset = scala.collection.mutable.Set[IDIPpair]()
   override def addIP(idip: IDIPpair): Unit = {
     activeIPset += idip
     Future.successful(())
@@ -209,7 +209,7 @@ class MesosContainerFactory(config: WhiskConfig,
     Future.successful(())
   }
 
-  override def getAddrMap(): Set[IDIPpair] = {
+  override def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
     activeIPset
   }
 }

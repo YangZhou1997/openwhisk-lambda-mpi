@@ -140,7 +140,7 @@ class YARNContainerFactory(actorSystem: ActorSystem,
   }
 
   // temporary solution for DockerContainerFactor compiling
-  private var activeIPset = Set[IDIPpair]()
+  private val activeIPset = scala.collection.mutable.Set[IDIPpair]()
   override def addIP(idip: IDIPpair): Unit = {
     activeIPset += idip
     Future.successful(())
@@ -156,7 +156,7 @@ class YARNContainerFactory(actorSystem: ActorSystem,
     Future.successful(())
   }
 
-  override def getAddrMap(): Set[IDIPpair] = {
+  override def getAddrMap(): scala.collection.mutable.Set[IDIPpair] = {
     activeIPset
   }
 
