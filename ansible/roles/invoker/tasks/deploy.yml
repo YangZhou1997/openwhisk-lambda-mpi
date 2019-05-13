@@ -231,7 +231,7 @@
       "RUNTIMES_MANIFEST": "{{ runtimesManifest | to_json }}"
       "CONFIG_whisk_runtimes_bypassPullForLocalImages": "{{ runtimes_bypass_pull_for_local_images | default() | string }}"
       "CONFIG_whisk_runtimes_localImagePrefix": "{{ runtimes_local_image_prefix | default() }}"
-      "CONFIG_whisk_containerFactory_containerArgs_network": "{{ invoker_container_network_name | default('openwhiskOverlay') }}"
+      "CONFIG_whisk_containerFactory_containerArgs_network": "{{ invoker_container_network_name | default('bridge') }}"
       "INVOKER_CONTAINER_POLICY": "{{ invoker_container_policy_name | default()}}"
       "CONFIG_whisk_containerPool_userMemory": "{{ hostvars[groups['invokers'][invoker_index | int]].user_memory | default(invoker.userMemory) }}"
       "CONFIG_whisk_docker_client_parallelRuns": "{{ invoker_parallel_runs | default() }}"
@@ -286,8 +286,7 @@
       {{ whisk_logs_dir }}/{{ invoker_name }}:/logs,\
       {{ invoker.confdir }}/{{ invoker_name }}:/conf,\
       {{ dockerInfo['DockerRootDir'] }}/containers/:/containers,\
-      {{ docker_sock | default('/var/run/docker.sock') }}:/var/run/docker.sock,\
-      /users/yangzhou/openwhisk/addrMap:/addrMap"
+      {{ docker_sock | default('/var/run/docker.sock') }}:/var/run/docker.sock"
 
 - name: set invoker runc volume
   set_fact:
