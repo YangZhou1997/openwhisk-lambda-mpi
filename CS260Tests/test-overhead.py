@@ -50,7 +50,7 @@ class wsk_fib:
         for i in range(0, self.fib_num):
             self.start_function_instance(i)
 
-        time.sleep(150 * 2)
+        time.sleep(150 * 4)
 
         for i in range(0, self.fib_num):
             returned_value = subprocess.check_output("wsk -i activation get %s | sed '1d'" % (self.fib_id[i]), shell=True)
