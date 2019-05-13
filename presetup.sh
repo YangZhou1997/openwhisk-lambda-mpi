@@ -8,6 +8,8 @@ sudo rm -rf /usr/lib/python2.7/dist-packages/OpenSSL
 sudo rm -rf /usr/lib/python2.7/dist-packages/pyOpenSSL-0.15.1.egg-info
 sudo pip install pyopenssl
 
+#sudo apt-get install runc
+
 cd tools/ubuntu-setup && ./all.sh
 sudo usermod -a -G docker $USER
 

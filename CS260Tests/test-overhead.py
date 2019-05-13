@@ -30,8 +30,8 @@ class wsk_fib:
 
     def create_func(self):
         for i in range(0, len(self.funcName)):
-            # subprocess.check_output("wsk -i action update --docker yangzhou1997/python3action:mpi %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
-            subprocess.check_output("wsk -i action update %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
+            # subprocess.check_output("wsk -i action update -t 300000 --docker yangzhou1997/python3action:mpi %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
+            subprocess.check_output("wsk -i action update -t 300000 %s ~/openwhisk/functions/test-random/fib.py" % (self.funcName[i]), shell=True)
 
 
     def start_function_instance(self, work_id):
@@ -50,7 +50,7 @@ class wsk_fib:
         for i in range(0, self.fib_num):
             self.start_function_instance(i)
 
-        time.sleep(150 * 2)
+        time.sleep(150 * 4)
 
         for i in range(0, self.fib_num):
             returned_value = subprocess.check_output("wsk -i activation get %s | sed '1d'" % (self.fib_id[i]), shell=True)

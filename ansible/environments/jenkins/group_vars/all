@@ -9,7 +9,8 @@ coverage_logs_dir: "{{ openwhisk_tmp_dir }}/wskcov"
 docker_registry: "node-0.mesh-five-nodes.lambda-mpi-pg0.wisc.cloudlab.us:444/"
 docker_dns: ""
 runtimes_bypass_pull_for_local_images: true
-invoker_use_runc: "{{ ansible_distribution != 'MacOSX' }}"
+#invoker_use_runc: "{{ ansible_distribution != 'MacOSX' }}"
+invoker_use_runc: "{{ false }}"
 
 db_prefix: whisk_local_
 
