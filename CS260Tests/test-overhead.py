@@ -60,16 +60,16 @@ class wsk_fib:
 
 
 if __name__ == "__main__":
-    wsk_ts_test = wsk_fib(128, 39)
+    wsk_ts_test = wsk_fib(64, 39)
     wsk_ts_test.create_func()
     wsk_ts_test.start_fibs()
     duration = 0.0
     f = open("annotations.txt", 'w')
     for i in range(0, wsk_ts_test.fib_num):
-        print(wsk_ts_test.fib_log[i]['response']['result']['fibonacci'])
-        print(len(wsk_ts_test.fib_log[i]['annotations']))
         simplejson.dump(wsk_ts_test.fib_log[i], f)
         f.write("----------------------------------------------\n")
+        print(wsk_ts_test.fib_log[i]['response']['result']['fibonacci'])
+        print(len(wsk_ts_test.fib_log[i]['annotations']))
         duration += wsk_ts_test.fib_log[i]['duration']
     print(duration / wsk_ts_test.fib_num)
     f.close()
