@@ -146,7 +146,7 @@ object DockerContainer {
              cpuShares: Int = 0,
              environment: Map[String, String] = Map.empty,
              //network: String = "bridge",
-             network: String = "openwhiskOverlay",
+             network: String = "bridge",
              dnsServers: Seq[String] = Seq.empty,
              dnsSearch: Seq[String] = Seq.empty,
              dnsOptions: Seq[String] = Seq.empty,
@@ -223,7 +223,7 @@ object DockerContainer {
             Future.failed(BlackboxStartupError(Messages.imagePullError(imageToUse)))
           }
       }
-      _ <- docker.connectBridge(id)
+      _ <- docker.connectOverlay(id)
       ip <- docker.inspectIPAddress(id, network).recoverWith {
         // remove the container immediately if inspect failed as
         // we cannot recover that case automatically

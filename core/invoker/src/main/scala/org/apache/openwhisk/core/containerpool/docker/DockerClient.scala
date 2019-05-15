@@ -159,8 +159,9 @@ class DockerClient(dockerHost: Option[String] = None,
 //    Future.successful(())
 //  }
 
-  def connectBridge(id: ContainerId)(implicit transid: TransactionId): Future[Unit] =
-    runCmd(Seq("network", "connect", "bridge", id.asString), config.timeouts.pause).map(_ => ())
+  def connectOverlay(id: ContainerId)(implicit transid: TransactionId): Future[Unit] =
+    runCmd(Seq("network", "connect", "openwhiskOverlay", id.asString), config.timeouts.run).map(_ => ())
+//config.timeouts.run -> 1min, might need longer time.
 
   def inspectIPAddress(id: ContainerId, network: String)(implicit transid: TransactionId): Future[Array[ContainerAddress]] =
     runCmd(
@@ -246,7 +247,7 @@ trait DockerApi {
     * @param id the id of the container to connect
     * @return a Future completing according to the command's exit-code
     */
-  def connectBridge(id: ContainerId)(implicit transid: TransactionId): Future[Unit]
+  def connectOverlay(id: ContainerId)(implicit transid: TransactionId): Future[Unit]
 
   /**
    * Gets the IP address of a given container.
