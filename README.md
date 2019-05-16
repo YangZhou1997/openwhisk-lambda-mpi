@@ -16,6 +16,12 @@ cd openwhisk
 # WSK CLI setup 
 ```
 cd openwhisk/ansible
+###################only once####################
+# Select a data store
+ansible-playbook setup.yml
+ansible-playbook prereq.yml
+# you might need to change in db_local.ini: host to 172.17.0.1
+###################only once####################
 ./mysetup_cli.sh
 ```
 

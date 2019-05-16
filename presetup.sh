@@ -2,6 +2,7 @@
 
 sudo apt-get update
 sudo apt-get -y install byobu
+sudo apt-get -y npm
 
 # bad: something is wrong with python's default openssl
 sudo rm -rf /usr/lib/python2.7/dist-packages/OpenSSL
