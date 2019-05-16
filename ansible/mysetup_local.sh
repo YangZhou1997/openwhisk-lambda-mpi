@@ -2,13 +2,15 @@
 
 [ -f "environments/local/ansible_local.cfg" ] && cp environments/local/ansible_local.cfg ansible.cfg
 
+###################only once####################
 # Select a data store
-ansible-playbook setup.yml
-ansible-playbook prereq.yml
+#ansible-playbook setup.yml
+#ansible-playbook prereq.yml
+# you might need to change in db_local.ini: host to 172.17.0.1
 
-./mysetup_cli.sh
-
-./mysetup_swarm_local.sh
+#./mysetup_cli.sh
+#./mysetup_swarm_local.sh
+###################only once####################
 
 # Building
 cd ..
