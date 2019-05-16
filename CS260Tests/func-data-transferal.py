@@ -95,7 +95,7 @@ def main(args):
         print('Connected by', addr)
         while True:
             data = recv_msg(conn)
-            print(data)
+            # print(data)
             if not data:
                 conn.close()
                 break
