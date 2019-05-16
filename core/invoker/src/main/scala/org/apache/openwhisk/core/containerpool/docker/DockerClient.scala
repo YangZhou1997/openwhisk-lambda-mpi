@@ -132,7 +132,7 @@ class DockerClient(dockerHost: Option[String] = None,
       }
     }.flatMap { _ =>
       // Iff the semaphore was acquired successfully
-      runCmd(Seq("run", "-d") ++ args ++ Seq(image), config.timeouts.run)
+      runCmd(Seq("run", "-d", "-v", "/users/yangzhou/openwhisk/addrMap:/addrMap") ++ args ++ Seq(image), config.timeouts.run)
         .andThen {
           // Release the semaphore as quick as possible regardless of the runCmd() result
           case _ => runSemaphore.release()
@@ -153,13 +153,26 @@ class DockerClient(dockerHost: Option[String] = None,
         }
     }
   }
+//  def updateAddrMap(ip: String)(implicit transid: TransactionId): Future[Unit] = {
+//    val path = Paths.get("/addrMap/test.txt")
+//    Files.write(path, ip.getBytes())
+//    Future.successful(())
+//  }
 
-  def inspectIPAddress(id: ContainerId, network: String)(implicit transid: TransactionId): Future[ContainerAddress] =
+  def connectOverlay(id: ContainerId)(implicit transid: TransactionId): Future[Unit] =
+    runCmd(Seq("network", "connect", "openwhiskOverlay", id.asString), config.timeouts.run).map(_ => ())
+//config.timeouts.run -> 1min, might need longer time.
+
+  def inspectIPAddress(id: ContainerId, network: String)(implicit transid: TransactionId): Future[Array[ContainerAddress]] =
     runCmd(
-      Seq("inspect", "--format", s"{{.NetworkSettings.Networks.${network}.IPAddress}}", id.asString),
-      config.timeouts.inspect).flatMap {
+      Seq("inspect", "--format", "'{{range .NetworkSettings.Networks}}{{println .IPAddress}}{{end}}'", id.asString),
+//      Seq("network", "inspect", "--format", s"""'{{(index .Containers \"${id.asString}\").IPv4Address}}'""", "docker_gwbridge", "| awk -F/ '{print $1}'"),
+      config.timeouts.inspect).flatMap{
       case "<no value>" => Future.failed(new NoSuchElementException)
-      case stdout       => Future.successful(ContainerAddress(stdout))
+      case stdout       => Future.successful(stdout.drop(1).split("\n").map(ContainerAddress(_)))
+      // eg: (172.17.0.4, 10.0.0.169), ie, (bridge ip, overlay ip)
+      // case stdout       => Future.successful(ContainerAddress(stdout.drop(1).dropRight(4)))
+      // '172.19.0.3/16 -> 172.19.0.3
     }
 
   def pause(id: ContainerId)(implicit transid: TransactionId): Future[Unit] =
@@ -229,6 +242,14 @@ trait DockerApi {
   def run(image: String, args: Seq[String] = Seq.empty[String])(implicit transid: TransactionId): Future[ContainerId]
 
   /**
+    * Connects the container with the given id to the bridge network.
+    *
+    * @param id the id of the container to connect
+    * @return a Future completing according to the command's exit-code
+    */
+  def connectOverlay(id: ContainerId)(implicit transid: TransactionId): Future[Unit]
+
+  /**
    * Gets the IP address of a given container.
    *
    * A container may have more than one network. The container has an
@@ -239,7 +260,7 @@ trait DockerApi {
    * @param network name of the network to get the IP address from
    * @return ip of the container
    */
-  def inspectIPAddress(id: ContainerId, network: String)(implicit transid: TransactionId): Future[ContainerAddress]
+  def inspectIPAddress(id: ContainerId, network: String)(implicit transid: TransactionId): Future[Array[ContainerAddress]]
 
   /**
    * Pauses the container with the given id.
