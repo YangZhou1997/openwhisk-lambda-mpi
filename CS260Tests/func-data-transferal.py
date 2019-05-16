@@ -51,7 +51,8 @@ def recvall(sock, n):
 def main(args):
     time.sleep(3)
 
-    dataSize = int(args.get("dataSize")) # 1 (MB)
+    dataSize = int(args.get("dataSize")) # 64 B
+    sendNum = int(args.get("sendNum")) # 100
 
     selfid = args.get("instanceID") # myname0 or myname1: String
     if selfid == "myname0":
@@ -69,10 +70,10 @@ def main(args):
         time.sleep(1)
 
         data = None
-        base_sending_data = ''.join([random.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(dataSize)])
+        base_sending_data = ''.join([random.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(64)])
 
         sending_data = ""
-        for i in range(0, 1024 * 1024):
+        for i in range(0, dataSize // 64):
             sending_data += base_sending_data
         sending_data = bytes(sending_data, encoding = "utf8")
 
@@ -80,8 +81,9 @@ def main(args):
         time1 = time.time()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((peerip, PORT))
-        send_msg(s, sending_data)
-        data = recv_msg(s)
+        for i in range(sendNum):
+            send_msg(s, sending_data)
+            data = recv_msg(s)
         time2 = time.time()
         s.close()
         return {"res": time2 - time1}

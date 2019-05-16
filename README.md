@@ -103,6 +103,8 @@ cd openwhisk/ansible
 Users specify function instance ID using ```-p instanceID name0``` during invoking time, 
 while our **Directory Service** will let each function instance know the IP addresses and survival status of its peer instances during runtime. 
 
+Note that due to some weird reason in Scala String parsing, we only support using String as instand ID instead of using pure numbers. 
+
 User creats function: 
 ```
 wsk -i action update --docker yangzhou1997/python3action:mpi fib ~/openwhisk/functions/test-random/fib.py
