@@ -9,6 +9,7 @@ import random
 import time
 import string
 import json as simplejson
+import sys
 
 class wsk_fib:
     def __init__(self, fib_num, number):
@@ -41,7 +42,7 @@ class wsk_fib:
 
         # ok: invoked /_/fib with id 046616d8795d43eaa616d8795db3ea95
         activationID = returned_value.decode("utf-8").split(' ')[5].rstrip()
-        print(activationID)
+        # print(activationID)
 
         self.fib_id[work_id] = activationID
 
@@ -56,17 +57,23 @@ class wsk_fib:
             try:
                 returned_value = subprocess.check_output("wsk -i activation get %s | sed '1d'" % (self.fib_id[i]), shell=True)
             except subprocess.CalledProcessError as e:
-                print(self.fib_id[i])
-                print(e.output)
+                # print(self.fib_id[i])
+                # print(e.output)
                 continue
 
-            results = json.loads(returned_value.decode("utf-8"))
-            self.fib_log[i] = results
-            # print(results)
+            if returned_value == None:
+                continue
+            try:
+                results = json.loads(returned_value.decode("utf-8"))
+                self.fib_log[i] = results
+                # print(results)
+            except json.decoder.JSONDecodeError as e:
+                continue
 
 
 if __name__ == "__main__":
-    wsk_ts_test = wsk_fib(64 * 2, 39)
+    num_fib = int(sys.argv[1])
+    wsk_ts_test = wsk_fib(num_fib, 39)
     wsk_ts_test.create_func()
     wsk_ts_test.start_fibs()
 
@@ -88,13 +95,13 @@ if __name__ == "__main__":
 
         if wsk_ts_test.fib_log[i] == None:
             error_count += 1
-            print('activation error for %s' % (wsk_ts_test.fib_id[i]))
+            # print('activation error for %s' % (wsk_ts_test.fib_id[i]))
         elif 'fibonacci' not in wsk_ts_test.fib_log[i]['response']['result']:
             error_count += 1
-            print('%s for %s' % (wsk_ts_test.fib_log[i]['response']['result'], wsk_ts_test.fib_id[i]))
+            # print('%s for %s' % (wsk_ts_test.fib_log[i]['response']['result'], wsk_ts_test.fib_id[i]))
         else:
             startType = ['warm', 'cold'][len(wsk_ts_test.fib_log[i]['annotations']) == 6]
-            print('fib results: %d; %s' % (wsk_ts_test.fib_log[i]['response']['result']['fibonacci'], startType))
+            # print('fib results: %d; %s' % (wsk_ts_test.fib_log[i]['response']['result']['fibonacci'], startType))
 
             temp = wsk_ts_test.fib_log[i]['duration']
             usertimeArray.append(temp)
