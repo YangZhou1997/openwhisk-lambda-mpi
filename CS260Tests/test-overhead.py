@@ -51,7 +51,7 @@ class wsk_fib:
         for i in range(0, self.fib_num):
             self.start_function_instance(i)
 
-        time.sleep(120)
+        time.sleep(200)
 
         for i in range(0, self.fib_num):
             try:
