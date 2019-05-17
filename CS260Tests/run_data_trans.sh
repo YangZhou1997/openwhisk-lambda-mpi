@@ -1,9 +1,27 @@
 # !/bin/bash
 
-wsk action -i update -t 300000 -m 512 func-data-transferal-xfadfxfk /users/yangzhou/openwhisk/CS260Tests/func-data-transferal.py
-wsk action -i update -t 300000 -m 512 func-data-transferal-ksafksdm /users/yangzhou/openwhisk/CS260Tests/func-data-transferal.py
+KB=1024
+MB=1048576
 
-# You might use string as instanceID instead of number
-# some parsing error in scala that I have not fixed ...
-wsk action -i invoke /whisk.system/func-data-transferal-xfadfxfk -p instanceID myname0 -p dataSize 128
-wsk action -i invoke /whisk.system/func-data-transferal-ksafksdm -p instanceID myname1 -p dataSize 128
+for dataSize in 64 1*$KB 256*$KB 512*$KB 1*$MB 2$MB 4$MB 8$MB 16$MB 32$MB 64$MB 128$MB ; do
+    echo $dataSize
+#    echo $dataSize >> ./results/data_trans/msg_data_trans_datasize.txt
+#    echo $dataSize >> ./results/data_trans/redis_data_trans_datasize.txt
+    for i in {1..10}
+    do
+        python test-data-transferal.py $dataSize func-data-transferal 1 >> ./results/data_trans/msg_data_trans_datasize.txt
+        python test-data-transferal.py $dataSize func-data-transferal-redis 1 >> ./results/data_trans/redis_data_trans_datasize.txt
+    done
+done
+
+
+for sendNum in 1 2 4 8 16 32 64 128 ; do
+    echo $sendNum
+#    echo $sendNum >> ./results/data_trans/msg_data_trans_sendnum.txt
+#    echo $sendNum >> ./results/data_trans/redis_data_trans_sendnum.txt
+    for i in {1..10}
+    do
+        python test-data-transferal.py 64 func-data-transferal $sendNum >> ./results/data_trans/msg_data_trans_sendnum.txt
+        python test-data-transferal.py 64 func-data-transferal-redis $sendNum >> ./results/data_trans/redis_data_trans_sendnum.txt
+    done
+done
