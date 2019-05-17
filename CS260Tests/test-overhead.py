@@ -125,6 +125,7 @@ if __name__ == "__main__":
     print(usertimeArray)
 
     print('average init time: %f' % (inittime / warm_start))
+    print(inittimeArray)
 
     print('successful instances number: %s' % (wsk_ts_test.fib_num - error_count))
     f.close()

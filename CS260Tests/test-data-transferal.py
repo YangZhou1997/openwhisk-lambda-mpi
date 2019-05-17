@@ -34,8 +34,10 @@ if __name__ == "__main__":
 
     # print(activationID1, activationID2)
 
-
-    time.sleep(30)
+    if testFunc == "func-data-transferal-redis":
+        time.sleep(30)
+    else:
+        time.sleep(10)
     try:
         returned_value = subprocess.check_output("wsk -i activation get %s | sed '1d'" % (activationID2), shell=True)
         results = json.loads(returned_value.decode("utf-8"))
