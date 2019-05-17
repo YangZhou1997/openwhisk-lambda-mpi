@@ -51,7 +51,7 @@ class wsk_fib:
         for i in range(0, self.fib_num):
             self.start_function_instance(i)
 
-        time.sleep(300)
+        time.sleep(120)
 
         for i in range(0, self.fib_num):
             try:
@@ -125,6 +125,7 @@ if __name__ == "__main__":
     print(usertimeArray)
 
     print('average init time: %f' % (inittime / warm_start))
+    print(inittimeArray)
 
     print('successful instances number: %s' % (wsk_ts_test.fib_num - error_count))
     f.close()

@@ -264,7 +264,6 @@
     controller_volumes:
        - "{{ whisk_logs_dir }}/{{ controller_name }}:/logs"
        - "{{ controller.confdir }}/{{ controller_name }}:/conf"
-       - "/users/yangzhou/openwhisk/addrMap:/addrMap"
 
 - name: check if coverage collection is enabled
   set_fact:
